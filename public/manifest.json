@@ -1,0 +1,17 @@
+{
+    "name": "Wishes.com - Gifts For Every Moment",
+    "short_name": "Wishes.com",
+    "description": "Your trusted online gift shop — delivering smiles across Sri Lanka.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#dc2626",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192 512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
