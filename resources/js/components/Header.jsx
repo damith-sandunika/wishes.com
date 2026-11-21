@@ -55,6 +55,29 @@ export default function Header() {
         if (searchQuery.trim()) { setIsSearchFocused(false); navigate(`/search?q=${encodeURIComponent(searchQuery)}`); }
     };
 
+    const renderSearch = (isMobile = false) => (
+        <div className={`relative ${isMobile ? 'block md:hidden px-3 pb-2.5' : 'hidden md:block flex-1 max-w-xl mx-4 lg:mx-6'}`}>
+            <form onSubmit={handleSearchSubmit} className="relative">
+                <input
+                    type="text"
+                    placeholder="Search fresh flowers, cakes, gifts..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => setIsSearchFocused(true)}
+                    className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-brand focus:bg-white transition-all shadow-2xs"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            </form>
+            {isSearchFocused && searchQuery.trim() && (
+                <SearchDropdown
+                    results={searchResults}
+                    onProductClick={(p) => { setIsSearchFocused(false); setSearchQuery(''); if (p) openQuickView(p); else handleSearchSubmit(); }}
+                    onAddToCart={(p) => { addToCart(p, 1); setIsSearchFocused(false); setSearchQuery(''); }}
+                />
+            )}
+        </div>
+    );
+
     return (
         <header className="w-full bg-white shadow-xs sticky top-0 z-50">
             <FlashSaleBanner />
@@ -79,22 +102,7 @@ export default function Header() {
                     </Link>
                 </div>
 
-                <div className="flex-1 max-w-xl mx-2 sm:mx-6 relative">
-                    <form onSubmit={handleSearchSubmit} className="relative">
-                        <input
-                            type="text"
-                            placeholder="Search fresh flowers, birthday cakes, personalized gifts..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            onFocus={() => setIsSearchFocused(true)}
-                            className="w-full pl-9 sm:pl-10 pr-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-brand focus:bg-white transition-all shadow-2xs"
-                        />
-                        <Search className="absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    </form>
-                    {isSearchFocused && searchQuery.trim() && (
-                        <SearchDropdown results={searchResults} onProductClick={(p) => { setIsSearchFocused(false); setSearchQuery(''); if (p) openQuickView(p); else handleSearchSubmit(); }} onAddToCart={(p) => { addToCart(p, 1); setIsSearchFocused(false); setSearchQuery(''); }} />
-                    )}
-                </div>
+                {renderSearch(false)}
 
                 <div className="flex items-center gap-1 sm:gap-2">
                     <Link to="/wishlist" className="p-1.5 sm:p-2 text-gray-600 hover:text-brand transition-colors relative">
@@ -110,6 +118,8 @@ export default function Header() {
                     </Link>
                 </div>
             </div>
+
+            {renderSearch(true)}
 
             <div className="hidden lg:block border-t border-gray-100 bg-white relative">
                 <div className="max-w-7xl mx-auto px-6 flex items-center gap-1">
