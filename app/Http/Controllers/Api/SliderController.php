@@ -35,11 +35,18 @@ class SliderController extends Controller
             'sort_order' => 'required|integer|min:1|max:4',
             'is_active' => 'nullable|boolean',
             'image' => 'required|file|mimes:jpg,jpeg,png,webp|max:3072',
+            'mobile_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
 
         if ($request->hasFile('image')) {
             $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
                 $request->file('image'), 'sliders', 'hero-banner-' . $request->sort_order, 1920
+            );
+        }
+
+        if ($request->hasFile('mobile_image')) {
+            $validated['mobile_image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('mobile_image'), 'sliders', 'hero-mobile-' . $request->sort_order, 1080
             );
         }
 
@@ -64,6 +71,7 @@ class SliderController extends Controller
             'sort_order' => 'required|integer|min:1|max:4',
             'is_active' => 'nullable|boolean',
             'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
+            'mobile_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
 
         if ($request->hasFile('image')) {
@@ -72,6 +80,15 @@ class SliderController extends Controller
             }
             $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
                 $request->file('image'), 'sliders', 'hero-banner-' . $slider->sort_order, 1920
+            );
+        }
+
+        if ($request->hasFile('mobile_image')) {
+            if ($slider->mobile_image && !str_starts_with($slider->mobile_image, 'http')) {
+                Storage::disk('public')->delete($slider->mobile_image);
+            }
+            $validated['mobile_image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('mobile_image'), 'sliders', 'hero-mobile-' . $slider->sort_order, 1080
             );
         } else {
             unset($validated['image']);
@@ -92,6 +109,9 @@ class SliderController extends Controller
     {
         if ($slider->image && !str_starts_with($slider->image, 'http')) {
             Storage::disk('public')->delete($slider->image);
+        }
+        if ($slider->mobile_image && !str_starts_with($slider->mobile_image, 'http')) {
+            Storage::disk('public')->delete($slider->mobile_image);
         }
         $slider->delete();
 
