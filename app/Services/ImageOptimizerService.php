@@ -35,13 +35,14 @@ class ImageOptimizerService
         $ext = strtolower($file->getClientOriginalExtension());
         if (!in_array($ext, self::ALLOWED_EXTS, true)) {
             throw ValidationException::withMessages([
-                'image' => 'Invalid file format. Only JPG, JPEG, PNG, and WEBP formats are allowed.'
+                'image' => "Invalid file format (.{$ext})! Only JPG, JPEG, PNG, and WEBP image files are allowed."
             ]);
         }
 
         if ($file->getSize() > self::MAX_BYTES) {
+            $sizeMb = round($file->getSize() / (1024 * 1024), 1);
             throw ValidationException::withMessages([
-                'image' => 'File size exceeds the 3MB limit. Please select an image under 3MB.'
+                'image' => "File size ({$sizeMb}MB) exceeds the 3MB limit! Please choose an image under 3MB."
             ]);
         }
 
@@ -114,18 +115,27 @@ class ImageOptimizerService
 
         $disk = config('filesystems.image_disk', 'public');
 
-        if (!empty($webpContent)) {
-            Storage::disk($disk)->put($targetPath, $webpContent, 'public');
-            if ($disk === 'r2' || $disk === 's3') {
-                return Storage::disk($disk)->url($targetPath);
+        try {
+            if (!empty($webpContent)) {
+                Storage::disk($disk)->put($targetPath, $webpContent, 'public');
+                return ($disk === 'r2' || $disk === 's3')
+                    ? Storage::disk($disk)->url($targetPath)
+                    : $targetPath;
             }
-            return $targetPath;
-        }
 
-        $storedPath = $file->storeAs($folder, $filename, $disk);
-        if ($disk === 'r2' || $disk === 's3') {
-            return Storage::disk($disk)->url($storedPath);
+            $storedPath = $file->storeAs($folder, $filename, $disk);
+            return ($disk === 'r2' || $disk === 's3')
+                ? Storage::disk($disk)->url($storedPath)
+                : $storedPath;
+        } catch (\Throwable $e) {
+            if ($disk !== 'public') {
+                if (!empty($webpContent)) {
+                    Storage::disk('public')->put($targetPath, $webpContent);
+                    return $targetPath;
+                }
+                return $file->storeAs($folder, $filename, 'public');
+            }
+            throw ValidationException::withMessages(['image' => 'Storage error: ' . $e->getMessage()]);
         }
-        return $storedPath;
     }
 }

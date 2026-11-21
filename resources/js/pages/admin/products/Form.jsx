@@ -95,9 +95,11 @@ export default function ProductForm() {
             }
             navigate('/admin/products');
         } catch (err) {
-            const msg = err.response?.data?.errors 
-                ? Object.values(err.response.data.errors).flat().join(', ')
-                : (err.response?.data?.message || 'Error saving product');
+            const data = err.response?.data;
+            const msg = data?.errors?.image?.[0]
+                || (data?.errors && Object.values(data.errors).flat()[0])
+                || data?.message
+                || 'Error saving product';
             setError(msg);
             setSaving(false);
         }

@@ -77,7 +77,12 @@ export default function CategoryForm() {
             }
             navigate('/admin/categories');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error saving category');
+            const data = err.response?.data;
+            const msg = data?.errors?.image?.[0]
+                || (data?.errors && Object.values(data.errors).flat()[0])
+                || data?.message
+                || 'Error saving category';
+            setError(msg);
             setSaving(false);
         }
     };

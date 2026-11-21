@@ -70,7 +70,9 @@ export default function AddonModal({ isOpen, onClose, addon, onSaved }) {
             onSaved();
             onClose();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to save addon.');
+            const data = err.response?.data;
+            const msg = data?.errors?.image_file?.[0] || (data?.errors && Object.values(data.errors).flat()[0]) || data?.message || 'Failed to save addon.';
+            setError(msg);
         } finally {
             setLoading(false);
         }

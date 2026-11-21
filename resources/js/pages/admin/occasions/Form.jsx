@@ -87,7 +87,9 @@ export default function OccasionForm() {
             await axios.post(url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             navigate('/admin/occasions');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error saving occasion.');
+            const data = err.response?.data;
+            const msg = data?.errors?.image_file?.[0] || (data?.errors && Object.values(data.errors).flat()[0]) || data?.message || 'Error saving occasion.';
+            setError(msg);
         } finally {
             setSaving(false);
         }
