@@ -1,16 +1,22 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 
 export default function Terms() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
-            <main className="flex-1 max-w-4xl mx-auto px-4 py-12 w-full">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Terms &amp; Conditions</h1>
-                    <p className="text-xs text-gray-500">Last updated: November 2026</p>
-                </div>
+            <PageHero
+                title="Terms & Conditions"
+                subtitle="Legal guidelines and terms of service for purchases made on Wishes.com."
+                badge="Legal Notice"
+                breadcrumbs={[
+                    { label: 'Home', to: '/' },
+                    { label: 'Terms' }
+                ]}
+            />
+            <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
 
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6 text-xs md:text-sm text-gray-600 leading-relaxed">
                     <section>

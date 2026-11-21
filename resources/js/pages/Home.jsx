@@ -5,24 +5,27 @@ import HeroSlider from '../components/HeroSlider';
 import CategoryGrid from '../components/CategoryGrid';
 import ProductGrid from '../components/ProductGrid';
 import Features from '../components/Features';
-import Testimonials from '../components/Testimonials';
 import Footer from '../components/Footer';
 import ScrollReveal from '../components/ScrollReveal';
 import PersonalizedBanner from '../components/PersonalizedBanner';
 import WhyOrganic from '../components/WhyOrganic';
+import Preloader from '../components/Preloader';
 
 export default function Home() {
     const [bestSellers, setBestSellers] = useState([]);
     const [newArrivals, setNewArrivals] = useState([]);
     const [specialOffers, setSpecialOffers] = useState([]);
+    const [heroReady, setHeroReady] = useState(false);
+    const [productsReady, setProductsReady] = useState(false);
 
     useEffect(() => {
         axios.get('/api/public/products')
             .then(res => {
-                const formatted = res.data.map((p, i) => {
+                const list = Array.isArray(res.data) ? res.data : (res.data.data || []);
+                const formatted = list.map((p, i) => {
                     const revs = Array.isArray(p.reviews) ? p.reviews : [];
                     const count = revs.length;
-                    const avg = count > 0 
+                    const avg = count > 0
                         ? Number((revs.reduce((sum, r) => sum + Number(r.rating || 5), 0) / count).toFixed(1))
                         : 5.0;
 
@@ -48,15 +51,17 @@ export default function Home() {
                 setNewArrivals([...formatted].reverse().slice(0, 8));
                 setSpecialOffers(formatted.filter(p => p.discount > 0).slice(0, 8));
             })
-            .catch(err => console.error(err));
+            .catch(err => console.error(err))
+            .finally(() => setProductsReady(true));
     }, []);
 
     return (
         <div className="min-h-screen bg-white">
+            <Preloader isLoaded={heroReady && productsReady} />
             <Header />
 
             {/* Hero — full width edge-to-edge */}
-            <HeroSlider />
+            <HeroSlider onLoaded={() => setHeroReady(true)} />
 
             {/* Categories Auto-rotating with Clean Header */}
             <ScrollReveal>
@@ -107,16 +112,7 @@ export default function Home() {
 
             {/* Why Wishes */}
             <ScrollReveal>
-                <section className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
-                    <WhyOrganic />
-                </section>
-            </ScrollReveal>
-
-            {/* Testimonials */}
-            <ScrollReveal>
-                <section className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
-                    <Testimonials />
-                </section>
+                <WhyOrganic />
             </ScrollReveal>
 
             <Footer />

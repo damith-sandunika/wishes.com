@@ -29,7 +29,7 @@ function Section({ title, children, defaultOpen = true }) {
   );
 }
 
-export default function ShopSidebar({ categories = [], filters, onFilterChange }) {
+export default function ShopSidebar({ categories = [], filters, onFilterChange, onClose }) {
   const [local, setLocal] = useState({
     categories: filters?.categories || [],
     priceMin: filters?.priceMin || '',
@@ -48,7 +48,10 @@ export default function ShopSidebar({ categories = [], filters, onFilterChange }
     });
   };
 
-  const handleApply = () => onFilterChange(local);
+  const handleApply = () => {
+    onFilterChange(local);
+    if (onClose) onClose();
+  };
   const handleClear = () => {
     const empty = { categories: [], priceMin: '', priceMax: '', occasions: [], delivery: [], rating: '' };
     setLocal(empty);
@@ -93,9 +96,9 @@ export default function ShopSidebar({ categories = [], filters, onFilterChange }
 
       {/* Price Range */}
       <Section title="Price Range">
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">Min</label>
+        <div className="space-y-2.5">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Min Price</label>
             <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
               <span className="px-2 py-1.5 text-xs text-gray-400 bg-gray-50 border-r border-gray-200">LKR</span>
               <input type="number" placeholder="0" value={local.priceMin}
@@ -103,9 +106,8 @@ export default function ShopSidebar({ categories = [], filters, onFilterChange }
                 className="w-full px-2 py-1.5 text-sm text-gray-700 focus:outline-none" />
             </div>
           </div>
-          <span className="text-gray-400 mt-5">–</span>
-          <div className="flex-1">
-            <label className="text-xs text-gray-500 mb-1 block">Max</label>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Max Price</label>
             <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
               <span className="px-2 py-1.5 text-xs text-gray-400 bg-gray-50 border-r border-gray-200">LKR</span>
               <input type="number" placeholder="50000" value={local.priceMax}

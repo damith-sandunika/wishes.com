@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 
 const timeline = [
   {
@@ -46,12 +47,17 @@ export default function TrackOrder() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 flex flex-col items-center px-4 py-12">
+      <PageHero
+        title="Track Your Order"
+        subtitle="Monitor your gift delivery progress and real-time courier updates."
+        badge="Live Dispatch"
+        breadcrumbs={[
+          { label: 'Home', to: '/' },
+          { label: 'Track Order' }
+        ]}
+      />
+      <main className="flex-1 flex flex-col items-center px-4 py-8">
         <div className="w-full max-w-2xl">
-          <div className="flex items-center gap-3 mb-8">
-            <Package className="w-8 h-8 text-[#dc2626]" />
-            <h1 className="text-2xl font-bold text-gray-800">Track Your Order</h1>
-          </div>
 
           <form onSubmit={handleTrack} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">Order Number</label>

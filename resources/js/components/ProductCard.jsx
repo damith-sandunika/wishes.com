@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, ShoppingCart, Check, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Check, Star, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
@@ -12,16 +12,17 @@ function setWishlist(list) {
 
 export default function ProductCard({ product = {} }) {
   const {
-    id, name, price, oldPrice, image, discount,
-    rating = 4.8, reviewsCount = 128, isBestseller,
+    id, name, price, oldPrice, image, images, discount,
+    rating = 0, reviewsCount = 0, isBestseller, categoryName,
+    short_description,
   } = product;
 
   const { addToCart } = useCart();
   const [wishlisted, setWishlisted] = useState(false);
-  const [added, setAdded]           = useState(false);
+  const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    setWishlisted(getWishlist().includes(id));
+    if (id) setWishlisted(getWishlist().includes(id));
   }, [id]);
 
   const toggleWishlist = (e) => {
@@ -36,97 +37,151 @@ export default function ProductCard({ product = {} }) {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!addToCart) return;
     addToCart(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const stars = Math.round(rating);
-  const discountPct = discount || (oldPrice ? Math.round((1 - price / oldPrice) * 100) : null);
+  const rawImg = image || (Array.isArray(images) && images[0]) || '';
+  const displayImg = rawImg 
+    ? (rawImg.startsWith('http://') || rawImg.startsWith('https://') 
+        ? rawImg 
+        : `/storage/${rawImg.replace(/^\/?(storage\/)?/, '')}`)
+    : '/images/placeholder.png';
+
+  const discountPct = discount || (oldPrice && price && Number(oldPrice) > Number(price)
+    ? Math.round(((Number(oldPrice) - Number(price)) / Number(oldPrice)) * 100)
+    : null);
+
+  const numRating = Number(rating) || 5;
+  const numReviews = Number(reviewsCount) || 128;
+  const subtitle = short_description || categoryName || 'A timeless gift of love';
 
   return (
-    <div className="relative bg-white rounded-2xl shadow hover:-translate-y-1 hover:shadow-lg
-                    transition-all duration-200 overflow-hidden group flex flex-col">
-
-      {/* Badges */}
-      {isBestseller && (
-        <span className="absolute top-2 left-2 z-10 bg-[#c8102e] text-white text-[11px] font-semibold
-                         px-2 py-0.5 rounded-full">
-          Best Seller
-        </span>
-      )}
-      {discountPct && (
-        <span className="absolute top-2 right-10 z-10 bg-amber-400 text-gray-900 text-[11px]
-                         font-bold px-2 py-0.5 rounded-full">
-          -{discountPct}%
-        </span>
-      )}
-
-      {/* Wishlist */}
-      <button
-        onClick={toggleWishlist}
-        className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center
-                   rounded-full bg-white/80 backdrop-blur-sm shadow hover:bg-white transition"
-        aria-label="Toggle wishlist"
-      >
-        <Heart
-          size={16}
-          className={wishlisted ? 'fill-[#c8102e] text-[#c8102e]' : 'text-gray-500 hover:text-[#c8102e]'}
-          fill={wishlisted ? 'currentColor' : 'none'}
-        />
-      </button>
-
-      {/* Clickable Image */}
-      <Link to={`/product/${id}`} className="block aspect-square overflow-hidden bg-gray-50">
-        <img
-          src={image || 'https://via.placeholder.com/300x300?text=Gift'}
-          alt={name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </Link>
-
-      {/* Body */}
-      <div className="p-3.5 flex flex-col flex-1">
-        {/* Stars */}
-        <div className="flex items-center gap-1 mb-1">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star
-              key={i}
-              size={12}
-              className={i < stars ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}
-              fill={i < stars ? 'currentColor' : 'none'}
-            />
-          ))}
-          <span className="text-[11px] text-gray-500 ml-0.5">({reviewsCount})</span>
-        </div>
-
-        {/* Name */}
-        <Link to={`/product/${id}`} className="text-sm font-medium text-gray-800 hover:text-[#c8102e] line-clamp-2 mb-2 flex-1 transition-colors">
-          {name}
+    <div className="group relative bg-white rounded-2xl sm:rounded-3xl border border-[#ecd9c6] shadow-[0_4px_18px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_28px_-6px_rgba(153,0,17,0.18)] transition-all duration-300 overflow-hidden flex flex-col justify-between">
+      
+      {/* Product Image Stage */}
+      <div className="relative aspect-[4/3.8] w-full overflow-hidden bg-[#faf7f2]">
+        <Link to={`/product/${id}`} className="block w-full h-full">
+          <img
+            src={displayImg}
+            alt={name || 'Gift item'}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          />
         </Link>
 
-        {/* Price */}
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-base font-bold text-[#c8102e]">Rs. {Number(price || 0).toLocaleString()}</span>
-          {oldPrice && (
-            <span className="text-xs text-gray-400 line-through">
-              Rs. {Number(oldPrice).toLocaleString()}
-            </span>
-          )}
+        {/* Top-Left Premium Ribbon Badge with Swallowtail V-cut */}
+        <div
+          className="absolute top-0 left-3.5 z-20 w-11 pt-2.5 pb-3.5 bg-gradient-to-b from-[#b80018] via-[#940014] to-[#6b000e] text-white shadow-md flex flex-col items-center pointer-events-none drop-shadow-md"
+          style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)' }}
+        >
+          <Crown size={15} className="text-amber-300 drop-shadow-xs mb-0.5" />
+          <span className="text-[10px] font-extrabold leading-[1.1] text-center tracking-tight uppercase">
+            {discountPct ? `-${discountPct}%` : 'Best\nSeller'}
+          </span>
         </div>
 
-        {/* Add to Cart Button */}
+        {/* Top-Right Circular Wishlist Button */}
         <button
-          onClick={handleAddToCart}
-          className="w-full flex items-center justify-center gap-2 bg-[#c8102e] hover:bg-[#b91c1c]
-                     text-white text-xs sm:text-sm font-medium py-2 rounded-xl transition-colors duration-200 shadow-2xs hover:shadow-md"
+          onClick={toggleWishlist}
+          className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-white/95 backdrop-blur-xs shadow-md flex items-center justify-center text-[#990011] hover:scale-105 active:scale-90 transition-all duration-200 border border-white/60"
+          aria-label="Save to wishlist"
         >
-          {added ? (
-            <><Check size={16} /> Added to Cart!</>
-          ) : (
-            <><ShoppingCart size={16} /> Add to Cart</>
-          )}
+          <Heart
+            size={16}
+            className={wishlisted ? 'fill-[#990011] text-[#990011]' : 'stroke-[#990011] stroke-[2]'}
+          />
         </button>
+      </div>
+
+      {/* Glassy Product Info Section with Curved Gold Wave */}
+      <div className="relative backdrop-blur-md bg-white/92 border-t border-white/50 pt-3 pb-3.5 px-3.5 flex flex-col justify-between flex-1 shadow-[0_-6px_20px_rgba(0,0,0,0.03)]">
+        
+        {/* Elegant Gold Wave Crest SVG */}
+        <div className="absolute -top-[21px] left-0 right-0 w-full overflow-hidden leading-none pointer-events-none">
+          <svg viewBox="0 0 350 24" className="w-full h-[22px] block" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id={`goldGrad-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#f7ecd7" stopOpacity="0.5" />
+                <stop offset="35%" stopColor="#d4af37" stopOpacity="0.9" />
+                <stop offset="70%" stopColor="#f3d48d" stopOpacity="1" />
+                <stop offset="100%" stopColor="#b8861b" stopOpacity="0.95" />
+              </linearGradient>
+            </defs>
+            <path d="M0,4 Q130,4 210,16 T350,22" fill="none" stroke={`url(#goldGrad-${id})`} strokeWidth="3" />
+            <path d="M0,4 Q130,4 210,16 T350,22 L350,24 L0,24 Z" fill="rgba(255, 255, 255, 0.92)" />
+          </svg>
+        </div>
+
+        <div>
+          {/* Title with Playfair Display Font */}
+          <Link
+            to={`/product/${id}`}
+            style={{ fontFamily: "'Playfair Display', serif" }}
+            className="block text-base sm:text-[17px] font-bold text-gray-900 group-hover:text-[#990011] transition-colors line-clamp-1 leading-snug"
+          >
+            {name}
+          </Link>
+
+          {/* Subtitle / Tagline */}
+          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5 font-normal">
+            {subtitle}
+          </p>
+
+          {/* Star Rating */}
+          <div className="flex items-center gap-1 mt-1.5 min-h-[16px]">
+            <div className="flex items-center text-amber-400">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={12}
+                  className={i < Math.round(numRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-400 font-medium ml-0.5">
+              ({numReviews})
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom Price & Add to Cart Bar */}
+        <div className="pt-2.5 mt-1 flex items-center justify-between gap-2 border-t border-gray-100/60">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-base sm:text-lg font-extrabold text-[#b30e1e] tracking-tight truncate">
+              Rs. {Number(price || 0).toLocaleString()}
+            </span>
+            {oldPrice && Number(oldPrice) > Number(price) && (
+              <span className="text-xs text-gray-400 line-through truncate">
+                Rs. {Number(oldPrice).toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleAddToCart}
+            className={`shrink-0 h-8 sm:h-9 px-3.5 sm:px-4 rounded-full font-semibold text-xs flex items-center gap-1.5 transition-all duration-200 active:scale-95 shadow-xs ${
+              added
+                ? 'bg-emerald-700 text-white'
+                : 'bg-[#a00014] hover:bg-[#850010] text-white shadow-rose-900/20'
+            }`}
+            title="Add to cart"
+          >
+            {added ? (
+              <>
+                <Check size={14} strokeWidth={2.5} />
+                <span>Added!</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={13} strokeWidth={2.2} />
+                <span>Add to Cart</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

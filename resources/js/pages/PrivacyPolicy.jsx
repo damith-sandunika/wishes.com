@@ -1,16 +1,22 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 
 export default function PrivacyPolicy() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
-            <main className="flex-1 max-w-4xl mx-auto px-4 py-12 w-full">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Privacy &amp; Data Security</h1>
-                    <p className="text-xs text-gray-500">How we protect your personal and recipient details.</p>
-                </div>
+            <PageHero
+                title="Privacy & Data Security"
+                subtitle="How we protect your personal, recipient and confidential payment details."
+                badge="100% Confidential"
+                breadcrumbs={[
+                    { label: 'Home', to: '/' },
+                    { label: 'Privacy Policy' }
+                ]}
+            />
+            <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
 
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-6 text-xs md:text-sm text-gray-600 leading-relaxed">
                     <section>

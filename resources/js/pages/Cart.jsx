@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, Gift } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 import { useCart } from '../context/CartContext';
 import OrderSummaryCard from '../components/cart/OrderSummaryCard';
 import axios from 'axios';
@@ -21,16 +22,15 @@ export default function Cart() {
     const [couponDiscount, setCouponDiscount] = useState(0);
     const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-    const deliveryCharge = cartTotal > 5000 ? 0 : 350;
+    const deliveryCharge = (cartTotal > 5000 || appliedCoupon?.is_free_delivery) ? 0 : 350;
 
     const handleApplyCoupon = async () => {
         if (!couponCode) return;
         try {
-            const res = await axios.post('/api/public/coupons/validate', { code: couponCode });
+            const res = await axios.post('/api/public/coupons/validate', { code: couponCode, sub_total: cartTotal });
             const coupon = res.data;
-            let disc = (cartTotal * coupon.discount_percent) / 100;
-            if (coupon.max_discount && disc > coupon.max_discount) disc = parseFloat(coupon.max_discount);
-            setCouponDiscount(disc);
+            const disc = coupon.calculated_discount ?? ((cartTotal * (coupon.discount_percent || 0)) / 100);
+            setCouponDiscount(Number(disc));
             setAppliedCoupon(coupon);
         } catch {
             setCouponDiscount(0);
@@ -66,11 +66,19 @@ export default function Cart() {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
             <Header />
+            <PageHero
+                title="Shopping Cart"
+                subtitle="Review your selected items, luxury gift wrapping, and personalized messages."
+                badge="Express Checkout"
+                breadcrumbs={[
+                    { label: 'Home', to: '/' },
+                    { label: 'Cart' }
+                ]}
+            />
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-                {/* Title */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Your Shopping Cart</h1>
+                        <h2 className="text-xl font-bold text-gray-800">Your Cart Items ({cartCount})</h2>
                         <div className="w-10 h-0.5 bg-[#c8102e] mt-1 rounded-full" />
                     </div>
                     <span className="bg-red-50 text-[#c8102e] font-semibold text-xs px-3 py-1 rounded-full border border-red-100">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../../layouts/AdminLayout';
+import AdminStatusBadge from '../../../components/admin/AdminStatusBadge';
 import axios from 'axios';
-import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Eye, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function ProductIndex() {
@@ -12,8 +13,13 @@ export default function ProductIndex() {
     const fetchAll = useCallback(() => {
         setLoading(true);
         axios.get('/api/products')
-            .then(res => setProducts(res.data.data || res.data))
-            .catch(() => {})
+            .then(res => {
+                const list = Array.isArray(res.data) 
+                    ? res.data 
+                    : (Array.isArray(res.data?.data) ? res.data.data : []);
+                setProducts(list);
+            })
+            .catch(() => setProducts([]))
             .finally(() => setLoading(false));
     }, []);
 
@@ -24,127 +30,114 @@ export default function ProductIndex() {
         try {
             await axios.delete(`/api/products/${id}`);
             fetchAll();
-        } catch (err) {
+        } catch (_) {
             alert('Cannot delete this product.');
         }
     };
 
-    const filtered = products.filter(p => 
-        (p.name || '').toLowerCase().includes(search.toLowerCase()) || 
-        (p.sku || '').toLowerCase().includes(search.toLowerCase())
+    const prodList = Array.isArray(products) 
+        ? products 
+        : (Array.isArray(products?.data) ? products.data : []);
+
+    const filtered = prodList.filter(p => 
+        (p?.name || '').toLowerCase().includes(search.toLowerCase()) || 
+        (p?.sku || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
-        <AdminLayout>
-            {/* Page Header matched to Education Center */}
-            <div className="mb-4 sm:mb-6 bg-white rounded-md p-4 sm:p-5 shadow-sm border border-slate-200 flex sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                    <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                    <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
-                    <div className="w-48 h-48 bg-blue-200 rotate-45 -ml-12 rounded-2xl"></div>
-                    <div className="w-32 h-32 bg-blue-300 rotate-45 -ml-16 rounded-lg"></div>
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">Products</h2>
-                    <p className="text-slate-400 text-[9px] sm:text-[11px] font-normal uppercase tracking-widest mt-1">Manage Products</p>
-                </div>
-                <Link to="/admin/products/create" className="hidden sm:flex relative z-10 bg-[#1933C6] hover:bg-[#090087] text-white px-5 py-2.5 rounded-md text-[11px] font-normal uppercase tracking-widest shadow-sm transition-all active:scale-95 items-center gap-2 shrink-0">
-                    <Plus size={16} strokeWidth={2.5} /> Add Product
-                </Link>
-            </div>
-            
-            {/* Mobile Action */}
-            <div className="flex justify-end mb-6 sm:hidden px-1">
-                <Link to="/admin/products/create" className="bg-[#1933C6] hover:bg-[#090087] text-white px-5 py-2.5 rounded-md text-[11px] font-normal uppercase tracking-widest shadow-sm flex items-center gap-2">
-                    <Plus size={16} strokeWidth={2.5} /> Add Product
-                </Link>
-            </div>
-
-            {/* Content Card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-                {/* Toolbar */}
-                <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-gray-50/50">
-                    <div className="relative w-full sm:w-80 group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#1933C6] transition-colors">
-                            <Search size={16} />
-                        </div>
-                        <input 
-                            type="text" 
-                            placeholder="Search by name or SKU..." 
+        <AdminLayout
+            pageTitle="Products Management"
+            pageSubtitle="Maintain gift catalog items, customize variations, and configure prices."
+            headerActions={
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search name or SKU..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#1933C6] focus:border-[#1933C6] transition-all shadow-sm"
+                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-blue-500 shadow-2xs"
                         />
                     </div>
-                    <div className="text-xs font-normal text-gray-500 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
-                        Total: <span className="text-[#1933C6]">{filtered.length}</span>
-                    </div>
+                    <Link
+                        to="/admin/products/create"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20 shrink-0"
+                    >
+                        <Plus size={15} strokeWidth={2.5} />
+                        <span>Add Product</span>
+                    </Link>
+                </div>
+            }
+        >
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <span className="text-xs font-bold text-slate-500">
+                        Total Catalog Items: <strong className="text-slate-800">{filtered.length}</strong>
+                    </span>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                                <th className="text-left px-6 py-3">Product / SKU</th>
-                                <th className="text-left px-6 py-3">Category</th>
-                                <th className="text-left px-6 py-3">Price</th>
-                                <th className="text-left px-6 py-3">Stock</th>
-                                <th className="text-left px-6 py-3">Status</th>
-                                <th className="text-right px-6 py-3">Actions</th>
+                    <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                            <tr>
+                                <th className="px-5 py-3.5">Product & SKU</th>
+                                <th className="px-5 py-3.5">Category</th>
+                                <th className="px-5 py-3.5">Selling Price</th>
+                                <th className="px-5 py-3.5">Current Stock</th>
+                                <th className="px-5 py-3.5">Status</th>
+                                <th className="px-5 py-3.5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                [...Array(4)].map((_, i) => (
-                                    <tr key={i}><td colSpan="6" className="px-6 py-4"><div className="h-6 bg-gray-100 rounded animate-pulse" /></td></tr>
-                                ))
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading products...</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan="6" className="text-center py-10 text-gray-400 font-normal">No products found.</td></tr>
-                            ) : filtered.map((p) => (
-                                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">No products found.</td></tr>
+                            ) : filtered.map(p => (
+                                <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                                    <td className="px-5 py-4">
                                         <div className="flex items-center gap-3">
                                             {p.images && p.images.length > 0 ? (
-                                                <img src={`/storage/${p.images[0]}`} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-gray-200 shadow-sm" />
+                                                <img src={p.images[0].startsWith('http') ? p.images[0] : `/storage/${p.images[0]}`} alt="" className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-2xs shrink-0" />
                                             ) : (
-                                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-[#1933C6] font-normal">
-                                                    {p.name.charAt(0).toUpperCase()}
+                                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                                                    <Package size={18} />
                                                 </div>
                                             )}
                                             <div>
-                                                <span className="font-normal text-slate-900 block">{p.name}</span>
-                                                <span className="text-[10px] text-gray-400 font-mono mt-0.5">{p.sku}</span>
+                                                <span className="font-bold text-slate-900 block">{p.name}</span>
+                                                <span className="text-[10px] text-slate-400 font-mono">{p.sku || 'No SKU'}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-gray-600 font-normal">{p.category?.name || '—'}</td>
-                                    <td className="px-6 py-4">
-                                        <span className="font-normal text-slate-900 block">Rs. {Number(p.discount_price || p.selling_price).toLocaleString()}</span>
-                                        {p.discount_price && p.discount_price !== p.selling_price && (
-                                            <span className="text-[10px] text-gray-400 line-through">Rs. {Number(p.selling_price).toLocaleString()}</span>
+                                    <td className="px-5 py-4 font-semibold text-slate-700">{p.category?.name || '—'}</td>
+                                    <td className="px-5 py-4">
+                                        <span className="font-bold text-slate-900 block">LKR {Number(p.discount_price || p.selling_price).toLocaleString()}</span>
+                                        {p.discount_price && p.discount_price < p.selling_price && (
+                                            <span className="text-[10px] text-slate-400 line-through">LKR {Number(p.selling_price).toLocaleString()}</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`font-normal px-2.5 py-1 rounded-md text-xs ${p.current_stock < 10 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-                                            {p.current_stock} {p.unit_type}
+                                    <td className="px-5 py-4">
+                                        <span className={`inline-flex px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                                            p.current_stock <= 5 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700'
+                                        }`}>
+                                            {p.current_stock ?? 0} {p.unit_type || 'units'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-normal ${p.status ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${p.status ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
-                                            {p.status ? 'Active' : 'Inactive'}
-                                        </span>
+                                    <td className="px-5 py-4">
+                                        <AdminStatusBadge status={p.status ? 'Active' : 'Inactive'} />
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Link to={`/admin/products/${p.id}`} className="px-3 py-1.5 text-emerald-600 hover:text-emerald-800 bg-emerald-50 rounded-lg text-xs font-normal transition-colors flex items-center gap-1">
+                                    <td className="px-5 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <Link to={`/admin/products/${p.id}`} className="px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1">
                                                 <Eye size={13} /> View
                                             </Link>
-                                            <Link to={`/admin/products/${p.id}/edit`} className="px-3 py-1.5 text-blue-600 hover:text-blue-800 bg-blue-50 rounded-lg text-xs font-normal transition-colors">
-                                                Edit
+                                            <Link to={`/admin/products/${p.id}/edit`} className="px-2.5 py-1 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1">
+                                                <Pencil size={13} /> Edit
                                             </Link>
-                                            <button onClick={() => destroy(p.id)} className="px-3 py-1.5 text-red-600 hover:text-red-800 bg-red-50 rounded-lg text-xs font-normal transition-colors">
-                                                Delete
+                                            <button onClick={() => destroy(p.id)} className="px-2.5 py-1 text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1">
+                                                <Trash2 size={13} /> Delete
                                             </button>
                                         </div>
                                     </td>

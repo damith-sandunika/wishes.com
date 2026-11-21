@@ -1,17 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Orders;
 
+use App\Actions\Coupons\ValidateCouponAction;
+use App\Enums\DeliveryMethod;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Jobs\SendWhatsAppOrderNotification;
-use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\OrderStatusHistory;
 use App\Models\Product;
+use App\Models\Setting;
+use App\Models\StockLog;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CreateOrderAction
 {
+    public function __construct(
+        protected ValidateCouponAction $validateCouponAction,
+        protected ResolveOrderCustomerAction $resolveCustomerAction
+    ) {}
+
     public function execute(array $data, ?string $paymentSlip = null): Order
     {
         return DB::transaction(function () use ($data, $paymentSlip) {
@@ -20,24 +34,30 @@ class CreateOrderAction
                 throw ValidationException::withMessages(['items' => 'Order must contain at least one item.']);
             }
 
+            // 1. DEADLOCK PREVENTION: Deterministically sort items by product_id
+            usort($itemsData, fn($a, $b) => (int)$a['product_id'] <=> (int)$b['product_id']);
+
             $computedSubTotal = 0.0;
             $orderItemsToInsert = [];
+            $stockLogsToInsert = [];
 
             foreach ($itemsData as $item) {
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->first();
+                $productId = (int)$item['product_id'];
+                $quantity = max(1, (int)($item['quantity'] ?? 1));
+
+                $product = Product::where('id', $productId)->lockForUpdate()->first();
                 if (!$product || !$product->status) {
-                    throw ValidationException::withMessages(['items' => "Product '{$item['product_name']}' is unavailable."]);
+                    $name = $item['product_name'] ?? ('Product #' . $productId);
+                    throw ValidationException::withMessages(['items' => "Product '{$name}' is currently unavailable."]);
                 }
 
-                $quantity = max(1, (int)$item['quantity']);
                 if ($product->current_stock !== null && $product->current_stock < $quantity) {
-                    throw ValidationException::withMessages(['items' => "Insufficient stock for '{$product->name}'. Available: {$product->current_stock}"]);
+                    throw ValidationException::withMessages([
+                        'items' => "Insufficient stock for '{$product->name}'. Available: {$product->current_stock}, requested: {$quantity}"
+                    ]);
                 }
 
-                $effectivePrice = ($product->discount_price > 0 && $product->discount_price < $product->selling_price)
-                    ? (float)$product->discount_price
-                    : (float)$product->selling_price;
-
+                $effectivePrice = $product->effective_price;
                 $itemTotal = round($effectivePrice * $quantity, 2);
                 $computedSubTotal += $itemTotal;
 
@@ -53,72 +73,61 @@ class CreateOrderAction
                     'unit_price' => $effectivePrice,
                     'total_price' => $itemTotal,
                 ];
+
+                $stockLogsToInsert[] = [
+                    'product_id' => $product->id,
+                    'type' => 'sale',
+                    'quantity' => -$quantity,
+                    'unit_cost' => $product->buying_price,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
 
+            // 2. SERVER-SIDE COUPON VALIDATION
             $discountAmount = 0.0;
             $couponCode = null;
             if (!empty($data['coupon_code'])) {
-                $coupon = Coupon::where('code', $data['coupon_code'])->where('is_active', true)->first();
-                if ($coupon && (!$coupon->valid_until || now()->lte($coupon->valid_until))) {
-                    $couponCode = $coupon->code;
-                    $calcDiscount = ($computedSubTotal * $coupon->discount_percent) / 100;
-                    if ($coupon->max_discount && $calcDiscount > $coupon->max_discount) {
-                        $calcDiscount = (float)$coupon->max_discount;
-                    }
-                    $discountAmount = min($calcDiscount, $computedSubTotal);
-                }
+                $couponResult = $this->validateCouponAction->execute((string)$data['coupon_code'], $computedSubTotal);
+                $couponCode = $couponResult['coupon']->code;
+                $discountAmount = $couponResult['discount_amount'];
             }
 
-            $deliveryMethod = $data['delivery_method'] ?? 'standard';
-            $defaultDeliveryFee = ($deliveryMethod === 'sameday') ? 750.0 : 350.0;
-            $deliveryCharge = ($computedSubTotal > 5000) ? 0.0 : (isset($data['delivery_charge']) ? (float)$data['delivery_charge'] : $defaultDeliveryFee);
+            // 3. SERVER-SIDE DELIVERY CHARGE CALCULATION
+            $deliveryMethodStr = strtolower(trim((string)($data['delivery_method'] ?? 'standard')));
+            $deliveryMethod = DeliveryMethod::tryFrom($deliveryMethodStr) ?? DeliveryMethod::STANDARD;
+            $freeThreshold = (float)(Setting::get('free_delivery_above', 5000));
+            $standardFee = (float)(Setting::get('delivery_charge', 350));
+
+            $deliveryCharge = match ($deliveryMethod) {
+                DeliveryMethod::SAMEDAY => 750.0,
+                default => ($computedSubTotal >= $freeThreshold) ? 0.0 : $standardFee,
+            };
+
             $grandTotal = max(0.0, round($computedSubTotal + $deliveryCharge - $discountAmount, 2));
 
-            $userId = auth('sanctum')->id() ?? auth()->id();
-            $createdUser = null;
-            $token = null;
+            // 4. USER ASSOCIATION VIA ACTION
+            $currentUserId = auth('sanctum')->id() ?? auth()->id();
+            [$userId, $createdUser, $token] = $this->resolveCustomerAction->execute($data, $currentUserId);
 
-            if (!empty($data['sender_email'])) {
-                if (!$userId && (!empty($data['password']) || !empty($data['create_account']))) {
-                    $existing = \App\Models\User::where('email', $data['sender_email'])->first();
-                    if ($existing) {
-                        $userId = $existing->id;
-                        $createdUser = $existing;
-                    } else {
-                        $pwd = !empty($data['password']) ? $data['password'] : Str::random(10);
-                        $createdUser = \App\Models\User::create([
-                            'name' => $data['customer_name'],
-                            'email' => $data['sender_email'],
-                            'password' => \Illuminate\Support\Facades\Hash::make($pwd),
-                        ]);
-                        $userId = $createdUser->id;
-                    }
-                    $token = $createdUser->createToken('customer_token')->plainTextToken;
-                } elseif (!$userId) {
-                    $existing = \App\Models\User::where('email', $data['sender_email'])->first();
-                    if ($existing) $userId = $existing->id;
-                }
-            }
+            // 5. ORDER CREATION
+            $trackingNumber = 'WSH-TRK-' . strtoupper(Str::random(8));
+            $invoiceNumber = 'WSH-INV-' . strtoupper(Str::random(6));
 
             $order = Order::create([
                 'user_id' => $userId,
-                'tracking_number' => 'WSH-TRK-' . strtoupper(Str::random(8)),
-                'invoice_number' => 'WSH-INV-' . strtoupper(Str::random(6)),
-                'customer_name' => $data['customer_name'],
-                'whatsapp_number' => $data['whatsapp_number'],
-                'recipient_name' => $data['recipient_name'] ?? $data['customer_name'],
-                'recipient_phone' => $data['recipient_phone'] ?? $data['whatsapp_number'],
-                'delivery_address' => $data['delivery_address'],
+                'tracking_number' => $trackingNumber,
+                'invoice_number' => $invoiceNumber,
+                'customer_name' => (string)$data['customer_name'],
+                'whatsapp_number' => (string)$data['whatsapp_number'],
+                'recipient_name' => (string)($data['recipient_name'] ?? $data['customer_name']),
+                'recipient_phone' => (string)($data['recipient_phone'] ?? $data['whatsapp_number']),
+                'delivery_address' => (string)$data['delivery_address'],
                 'delivery_date' => !empty($data['delivery_date']) ? $data['delivery_date'] : null,
                 'delivery_time_slot' => $data['delivery_time_slot'] ?? $data['delivery_time'] ?? null,
-                'province' => $data['province'] ?? null,
-                'district' => $data['district'] ?? null,
-                'city' => $data['city'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'payment_method' => $data['payment_method'] ?? 'Cash On Delivery',
-                'payment_status' => 'Pending',
-                'delivery_status' => 'Pending',
+                'payment_method' => (string)($data['payment_method'] ?? 'Cash On Delivery'),
+                'payment_status' => PaymentStatus::PENDING->value,
+                'delivery_status' => OrderStatus::PENDING->value,
                 'delivery_charge' => $deliveryCharge,
                 'sub_total' => round($computedSubTotal, 2),
                 'discount_amount' => round($discountAmount, 2),
@@ -134,15 +143,34 @@ class CreateOrderAction
                 $order->items()->create($item);
             }
 
-            // Asynchronous WhatsApp notifications dispatching
+            foreach ($stockLogsToInsert as $log) {
+                $log['notes'] = "Sold in Order #{$invoiceNumber}";
+                StockLog::create($log);
+            }
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'user_id' => $userId,
+                'from_status' => null,
+                'to_status' => OrderStatus::PENDING->value,
+                'notes' => 'Order placed successfully by customer.',
+            ]);
+
             SendWhatsAppOrderNotification::dispatch($order->id, 'wa_order_template', true);
+
+            Log::info('order.placed', [
+                'order_id' => $order->id,
+                'invoice' => $order->invoice_number,
+                'grand_total' => $order->grand_total,
+                'user_id' => $userId,
+            ]);
 
             if ($createdUser) {
                 $order->setAttribute('user', $createdUser);
                 $order->setAttribute('token', $token);
             }
 
-            return $order->load('items');
+            return $order->load(['items', 'statusHistories']);
         });
     }
 }

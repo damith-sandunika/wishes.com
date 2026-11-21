@@ -3,6 +3,7 @@ import { Heart, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 import { useCart } from '../context/CartContext';
 
 export default function Wishlist() {
@@ -23,10 +24,16 @@ export default function Wishlist() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-10">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          My Wishlist ({wishlist.length} item{wishlist.length !== 1 ? 's' : ''})
-        </h1>
+      <PageHero
+        title="My Wishlist"
+        subtitle={`You have ${wishlist.length} item${wishlist.length !== 1 ? 's' : ''} saved in your celebration wishlist.`}
+        badge="Saved Favorites"
+        breadcrumbs={[
+          { label: 'Home', to: '/' },
+          { label: 'Wishlist' },
+        ]}
+      />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
 
         {wishlist.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">

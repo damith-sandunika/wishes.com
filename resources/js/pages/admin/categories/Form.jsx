@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../../layouts/AdminLayout';
 import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
 
-const EMPTY = { name: '', description: '', status: 1 };
+const EMPTY = { name: '', description: '', status: 1, sort_order: 0, image: null };
 
 export default function CategoryForm() {
     const { id } = useParams();
@@ -13,6 +13,7 @@ export default function CategoryForm() {
     
     const [form, setForm] = useState(EMPTY);
     const [imageFile, setImageFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [loading, setLoading] = useState(isEdit);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -20,11 +21,32 @@ export default function CategoryForm() {
     useEffect(() => {
         if (isEdit) {
             axios.get(`/api/categories/${id}`)
-                .then(res => setForm(res.data))
+                .then(res => {
+                    const data = res.data.data || res.data;
+                    setForm({
+                        ...EMPTY,
+                        ...data,
+                        name: data.name ?? '',
+                        description: data.description ?? '',
+                        sort_order: data.sort_order ?? 0,
+                        status: data.status ? 1 : 0,
+                    });
+                    if (data.image) {
+                        setPreviewUrl(data.image.startsWith('http') ? data.image : `/storage/${data.image.replace(/^\/?(storage\/)?/, '')}`);
+                    }
+                })
                 .catch(() => setError('Category not found'))
                 .finally(() => setLoading(false));
         }
     }, [id, isEdit]);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
 
     const save = async (e) => {
         e.preventDefault();
@@ -32,24 +54,21 @@ export default function CategoryForm() {
         setError('');
         try {
             const formData = new FormData();
-            Object.keys(form).forEach(key => {
-                if (form[key] !== null) {
-                    let value = form[key];
-                    if (typeof value === 'boolean') {
-                        value = value ? 1 : 0;
-                    }
-                    formData.append(key, value);
-                }
-            });
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+            formData.append('name', form.name);
+            formData.append('status', form.status ? 1 : 0);
+            formData.append('sort_order', form.sort_order || 0);
+            if (form.description) formData.append('description', form.description);
+            if (imageFile) formData.append('image', imageFile);
 
             if (isEdit) {
                 formData.append('_method', 'PUT');
-                await axios.post(`/api/categories/${id}`, formData);
+                await axios.post(`/api/categories/${id}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             } else {
-                await axios.post('/api/categories', formData);
+                await axios.post('/api/categories', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             }
             navigate('/admin/categories');
         } catch (err) {
@@ -58,105 +77,70 @@ export default function CategoryForm() {
         }
     };
 
-    const inp = "w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-md text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1933C6]/20 focus:border-[#1933C6] transition-all shadow-sm";
-    const label = "block text-[11px] font-normal text-slate-700 mb-2 uppercase tracking-widest";
+    const inp = "w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-blue-500 transition-all shadow-2xs";
+    const label = "block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider";
 
     return (
-        <AdminLayout>
-            <div className="max-w-3xl mx-auto">
-                {/* Header */}
-                <div className="mb-6 bg-white rounded-md p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                        <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                        <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
-                        <div className="w-48 h-48 bg-blue-200 rotate-45 -ml-12 rounded-2xl"></div>
-                        <div className="w-32 h-32 bg-blue-300 rotate-45 -ml-16 rounded-lg"></div>
-                    </div>
-                    <div className="relative z-10">
-                        <Link to="/admin/categories" className="inline-flex items-center gap-2 text-[10px] font-normal text-slate-400 hover:text-[#1933C6] uppercase tracking-widest transition-colors mb-2">
-                            <ArrowLeft size={14} /> Back to Categories
-                        </Link>
-                        <h2 className="text-2xl font-normal text-slate-800 tracking-tight">
-                            {isEdit ? 'Edit Category' : 'Create Category'}
-                        </h2>
-                    </div>
-                </div>
+        <AdminLayout
+            pageTitle={isEdit ? 'Edit Category' : 'Create Category'}
+            pageSubtitle="Define title, descriptive banner, and hierarchy for gift grouping."
+            headerActions={
+                <Link to="/admin/categories" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition-colors">
+                    <ArrowLeft size={14} /> Back to Categories
+                </Link>
+            }
+        >
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-2xl mx-auto">
+                {error && <div className="mb-5 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">{error}</div>}
+                
+                {loading ? (
+                    <div className="h-40 flex items-center justify-center text-slate-400 font-semibold text-xs">Loading category...</div>
+                ) : (
+                    <form onSubmit={save} className="space-y-4">
+                        <div>
+                            <label className={label}>Category Name *</label>
+                            <input required value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} className={inp} placeholder="e.g. Birthday Flowers" />
+                        </div>
+                        <div>
+                            <label className={label}>Description (Optional)</label>
+                            <textarea rows={3} value={form.description || ''} onChange={e => setForm({...form, description: e.target.value})} className={`${inp} resize-none`} placeholder="Brief description of gifts in this collection..." />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className={label}>Sort Order</label>
+                                <input type="number" value={form.sort_order ?? 0} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className={inp} />
+                            </div>
+                            <div>
+                                <label className={label}>Visibility Status</label>
+                                <select value={form.status ? 1 : 0} onChange={e => setForm({...form, status: Number(e.target.value) === 1})} className={inp}>
+                                    <option value={1}>Active</option>
+                                    <option value={0}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
 
-                {/* Form Card */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <form onSubmit={save} className="p-6 sm:p-8 space-y-6">
-                        {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-normal border border-red-100">{error}</div>}
-                        
-                        {loading ? (
-                            <div className="h-40 flex items-center justify-center text-gray-400 font-normal">Loading...</div>
-                        ) : (
-                            <>
-                                <div>
-                                    <label className={label}>Category Name <span className="text-red-500">*</span></label>
-                                    <input 
-                                        required 
-                                        autoFocus
-                                        value={form.name} 
-                                        onChange={e => setForm({...form, name: e.target.value})} 
-                                        className={inp} 
-                                        placeholder="e.g. Vegetables"
+                        <div>
+                            <label className={label}>Category Image</label>
+                            {previewUrl && (
+                                <div className="mb-2 relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200">
+                                    <img 
+                                        src={previewUrl.startsWith('http') || previewUrl.startsWith('blob:') ? previewUrl : `/storage/${previewUrl.replace(/^\/?(storage\/)?/, '')}`} 
+                                        alt="Preview" 
+                                        className="w-full h-full object-cover" 
                                     />
                                 </div>
+                            )}
+                            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-xs font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                        </div>
 
-                                <div>
-                                    <label className={label}>Category Image</label>
-                                    <div className="flex items-center gap-4">
-                                        {form.image && !imageFile && (
-                                            <img src={`/storage/${form.image}`} alt="Current" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shadow-sm" />
-                                        )}
-                                        <input 
-                                            type="file" 
-                                            accept="image/*"
-                                            onChange={e => setImageFile(e.target.files[0])} 
-                                            className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-md text-sm font-normal focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-[11px] file:font-normal file:uppercase file:tracking-widest file:bg-blue-50 file:text-[#1933C6] hover:file:bg-blue-100 transition-all" 
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label className={label}>Description</label>
-                                    <textarea 
-                                        rows={4} 
-                                        value={form.description || ''} 
-                                        onChange={e => setForm({...form, description: e.target.value})} 
-                                        className={`${inp} resize-none`} 
-                                        placeholder="Optional details about this category..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className={label}>Status</label>
-                                    <select 
-                                        value={form.status} 
-                                        onChange={e => setForm({...form, status: Number(e.target.value)})} 
-                                        className={inp}
-                                    >
-                                        <option value={1}>Active (Visible to customers)</option>
-                                        <option value={0}>Inactive (Hidden)</option>
-                                    </select>
-                                </div>
-
-                                <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                                    <Link to="/admin/categories" className="px-6 py-2.5 rounded-md text-slate-600 text-[11px] uppercase tracking-widest font-normal hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
-                                        Cancel
-                                    </Link>
-                                    <button 
-                                        type="submit" 
-                                        disabled={saving} 
-                                        className="px-6 py-2.5 rounded-md bg-[#1933C6] hover:bg-[#090087] text-white text-[11px] font-normal uppercase tracking-widest shadow-sm active:scale-95 transition-all flex items-center gap-2 disabled:opacity-70 disabled:hover:scale-100" 
-                                    >
-                                        <Save size={16} strokeWidth={2.5} /> {saving ? 'Saving...' : 'Save Category'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
+                        <div className="pt-5 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <Link to="/admin/categories" className="px-5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</Link>
+                            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-500/25 active:scale-95">
+                                <Save size={15} /> {saving ? 'Saving...' : 'Save Category'}
+                            </button>
+                        </div>
                     </form>
-                </div>
+                )}
             </div>
         </AdminLayout>
     );

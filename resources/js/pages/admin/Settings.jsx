@@ -3,6 +3,8 @@ import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import WhatsAppSettingsTab from './settings/WhatsAppSettingsTab';
 import GiftServicesTab from './settings/GiftServicesTab';
+import SocialLinksTab from './settings/SocialLinksTab';
+import { Save } from 'lucide-react';
 
 export default function AdminSettings() {
     const [settings, setSettings] = useState({});
@@ -41,7 +43,7 @@ export default function AdminSettings() {
             await axios.post('/api/settings', settings);
             setMessage('Settings saved successfully!');
             setTimeout(() => setMessage(''), 3000);
-        } catch (err) {
+        } catch {
             setMessage('Error saving settings.');
         } finally {
             setSaving(false);
@@ -52,41 +54,35 @@ export default function AdminSettings() {
         setSettings(prev => ({ ...prev, [key]: value }));
     };
 
-    const inp = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white text-sm';
+    const inp = 'w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white text-xs font-medium';
 
-    if (loading) return <AdminLayout><div className="p-6 text-gray-500">Loading settings...</div></AdminLayout>;
+    if (loading) return <AdminLayout pageTitle="Settings"><div className="p-6 text-slate-500">Loading settings...</div></AdminLayout>;
 
     return (
-        <AdminLayout>
-            {/* Page Header */}
-            <div className="mb-4 sm:mb-6 bg-white rounded-md p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                    <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                    <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
-                    <div className="w-48 h-48 bg-blue-200 rotate-45 -ml-12 rounded-2xl"></div>
-                    <div className="w-32 h-32 bg-blue-300 rotate-45 -ml-16 rounded-lg"></div>
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">Settings</h2>
-                    <p className="text-slate-400 text-[9px] sm:text-[11px] font-normal uppercase tracking-widest mt-1">Configure your store</p>
-                </div>
-                <button onClick={handleSave} disabled={saving} className="relative z-10 bg-[#1933C6] hover:bg-[#090087] text-white px-5 py-2.5 rounded-md text-[11px] font-normal uppercase tracking-widest shadow-sm transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2 justify-center w-full sm:w-auto">
-                    {saving ? 'Saving...' : 'Save Settings'}
+        <AdminLayout
+            pageTitle="Store Settings"
+            pageSubtitle="Configure shop identity, social links, delivery fees and payment gateways"
+            headerActions={
+                <button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95 disabled:opacity-60 flex items-center gap-1.5">
+                    <Save size={15} /> {saving ? 'Saving...' : 'Save Settings'}
                 </button>
-            </div>
+            }
+        >
+            {message && (
+                <div className={`mb-6 px-4 py-2.5 rounded-lg text-xs font-semibold shadow-2xs ${message.includes('Error') ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                    {message}
+                </div>
+            )}
 
-            {message && <div className={`mb-6 px-4 py-3 rounded-md text-sm font-normal shadow-sm ${message.includes('Error') ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>{message}</div>}
-
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6 flex overflow-x-auto custom-scrollbar">
-                {['General', 'Delivery & Payment', 'Gift Wrapping & Add-ons', 'WhatsApp'].map(tab => (
+            <div className="border-b border-slate-200 mb-6 flex overflow-x-auto gap-1">
+                {['General', 'Social Media', 'Delivery & Payment', 'Gift Wrapping & Add-ons', 'WhatsApp'].map(tab => (
                     <button 
                         key={tab} 
                         onClick={() => setActiveTab(tab)}
-                        className={`px-6 py-3 text-sm font-normal transition-colors border-b-2 whitespace-nowrap ${
+                        className={`px-4 py-2.5 text-xs font-semibold transition border-b-2 whitespace-nowrap ${
                             activeTab === tab 
-                            ? 'border-[#1933C6] text-[#1933C6]' 
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            ? 'border-blue-600 text-blue-700' 
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
                         }`}
                     >
                         {tab}
@@ -95,75 +91,61 @@ export default function AdminSettings() {
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                
                 {activeTab === 'General' && (
-                    <div className="space-y-5 animate-in fade-in duration-300">
-                        <h3 className="font-normal text-gray-800 text-lg mb-2 flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">🏢</span>
-                            Shop Information
-                        </h3>
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-slate-900 text-sm mb-3">Shop Information</h3>
                         <div>
-                            <label className="block text-sm font-normal text-gray-700 mb-1.5">Shop Name</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Shop Name</label>
                             <input value={settings.shop_name || ''} onChange={e => handleChange('shop_name', e.target.value)} className={inp} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-normal text-gray-700 mb-1.5">Email Address</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
                                 <input value={settings.shop_email || ''} onChange={e => handleChange('shop_email', e.target.value)} className={inp} />
                             </div>
                             <div>
-                                <label className="block text-sm font-normal text-gray-700 mb-1.5">Phone Number</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
                                 <input value={settings.shop_phone || ''} onChange={e => handleChange('shop_phone', e.target.value)} className={inp} />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-normal text-gray-700 mb-1.5">Physical Address</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Physical Address</label>
                             <textarea rows={3} value={settings.shop_address || ''} onChange={e => handleChange('shop_address', e.target.value)} className={`${inp} resize-none`} />
                         </div>
                     </div>
                 )}
 
+                {activeTab === 'Social Media' && (
+                    <SocialLinksTab settings={settings} handleChange={handleChange} />
+                )}
+
                 {activeTab === 'Delivery & Payment' && (
-                    <div className="space-y-5 animate-in fade-in duration-300">
-                        <h3 className="font-normal text-gray-800 text-lg mb-2 flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">🚚</span>
-                            Delivery Settings
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-slate-900 text-sm mb-3">Delivery Charges</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-normal text-gray-700 mb-1.5">Delivery Charge (Rs.)</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Standard Delivery Fee (Rs.)</label>
                                 <input type="number" value={settings.delivery_charge || ''} onChange={e => handleChange('delivery_charge', e.target.value)} className={inp} />
                             </div>
                             <div>
-                                <label className="block text-sm font-normal text-gray-700 mb-1.5">Free Delivery Above (Rs.)</label>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">Free Delivery Threshold (Rs.)</label>
                                 <input type="number" value={settings.free_delivery_above || ''} onChange={e => handleChange('free_delivery_above', e.target.value)} className={inp} />
                             </div>
                         </div>
-                        <h3 className="font-normal text-gray-800 text-lg mb-2 mt-6 flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center">💳</span>
-                            Payment Details
-                        </h3>
+                        <h3 className="font-bold text-slate-900 text-sm mb-3 mt-6">Direct Bank Transfer Details</h3>
                         <div>
-                            <label className="block text-sm font-normal text-gray-700 mb-1.5">Bank Account (For Transfers)</label>
+                            <label className="block text-xs font-semibold text-slate-600 mb-1">Bank Account Instructions</label>
                             <textarea rows={4} placeholder="Bank: Commercial Bank&#10;Branch: Colombo&#10;Acc No: 123456" value={settings.bank_account_number || ''} onChange={e => handleChange('bank_account_number', e.target.value)} className={`${inp} resize-none`} />
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'Gift Wrapping & Add-ons' && (
-                    <GiftServicesTab 
-                        settings={settings} 
-                        handleChange={handleChange} 
-                    />
+                    <GiftServicesTab settings={settings} handleChange={handleChange} />
                 )}
 
                 {activeTab === 'WhatsApp' && (
-                    <WhatsAppSettingsTab 
-                        settings={settings} 
-                        handleChange={handleChange} 
-                        waStatus={waStatus} 
-                        waQr={waQr} 
-                    />
+                    <WhatsAppSettingsTab settings={settings} handleChange={handleChange} waStatus={waStatus} waQr={waQr} />
                 )}
             </div>
         </AdminLayout>

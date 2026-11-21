@@ -1,18 +1,23 @@
 import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 import { Truck, Clock, ShieldCheck, MapPin } from 'lucide-react';
 
 export default function DeliveryPolicy() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header />
-
-            <main className="flex-1 max-w-4xl mx-auto px-4 py-12 w-full">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Delivery &amp; Shipping Policy</h1>
-                    <p className="text-xs md:text-sm text-gray-500">Fast, secure and temperature-controlled gift delivery across Sri Lanka.</p>
-                </div>
+            <PageHero
+                title="Delivery & Shipping Policy"
+                subtitle="Fast, secure and temperature-controlled gift delivery across Sri Lanka."
+                badge="White-Glove Courier"
+                breadcrumbs={[
+                    { label: 'Home', to: '/' },
+                    { label: 'Delivery Policy' }
+                ]}
+            />
+            <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">

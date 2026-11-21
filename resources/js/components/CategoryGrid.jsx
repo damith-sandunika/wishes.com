@@ -1,48 +1,39 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import axios from 'axios';
 
-const DEFAULT_CATEGORIES = [
-  { name: 'Flowers', slug: 'flowers', image: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Cakes', slug: 'cakes', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Chocolates', slug: 'chocolates', image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Gift Hampers', slug: 'hampers', image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Teddy Bears', slug: 'teddy-bears', image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Apparel Gifts', slug: 'apparel', image: 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Personalized', slug: 'personalized', image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80' },
-  { name: 'Corporate Gifts', slug: 'corporate', image: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=400&q=80' },
-];
-
 export default function CategoryGrid() {
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     axios.get('/api/public/categories')
-      .then(({ data }) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const apiMap = Object.fromEntries(data.map(c => [c.slug, c]));
-          setCategories(DEFAULT_CATEGORIES.map(d => {
-            const match = apiMap[d.slug];
-            if (!match) return d;
-            return {
-              ...d,
-              ...match,
-              image: match.image 
-                ? (match.image.startsWith('http') ? match.image : `/storage/${match.image}`)
-                : d.image,
-            };
-          }));
-        }
+      .then(res => {
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setCategories(list.map(c => {
+          const img = (c.image || '').trim();
+          const formatted = !img 
+            ? null 
+            : (img.startsWith('http://') || img.startsWith('https://')) 
+              ? img 
+              : `/storage/${img.replace(/^\/?(storage\/)?/, '')}`;
+          return {
+            id: c.id,
+            name: c.name,
+            slug: c.slug || String(c.id),
+            image: formatted,
+          };
+        }));
       })
-      .catch(() => {});
+      .catch(() => setCategories([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  // Smooth Auto-Rotate horizontally
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || categories.length <= 4) return;
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const el = scrollRef.current;
@@ -53,32 +44,67 @@ export default function CategoryGrid() {
           el.scrollBy({ left: 160, behavior: 'smooth' });
         }
       }
-    }, 2800);
+    }, 3200);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, categories.length]);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: direction * 200, behavior: 'smooth' });
+      scrollRef.current.scrollBy({ left: direction * 220, behavior: 'smooth' });
     }
   };
 
+  if (loading) {
+    return (
+      <section className="py-8 max-w-7xl mx-auto px-4 lg:px-6">
+        <div className="h-6 w-44 bg-slate-100 rounded-md animate-pulse mb-6" />
+        <div className="flex gap-4 sm:gap-6 overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex-shrink-0 flex flex-col items-center w-24 sm:w-28 animate-pulse">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 mb-3" />
+              <div className="h-3 w-16 bg-slate-100 rounded" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (categories.length === 0) return null;
+
   return (
-    <section className="py-8 max-w-7xl mx-auto px-4 lg:px-6">
-      {/* Clean Header matching User Design without emojis, without subtitles, without arrow buttons */}
-      <div className="flex items-center justify-between mb-5">
+    <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 lg:px-6 relative group/section">
+      <div className="flex items-end justify-between mb-6 pb-2 border-b border-rose-100/50">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-rose-600 mb-1 block">Curated Collections</span>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Shop by <span className="text-[#c8102e]">Category</span>
           </h2>
-          <div className="w-12 h-1 bg-[#c8102e] mt-1.5 rounded-full" />
         </div>
-        <Link to="/shop" className="text-[#c8102e] font-semibold text-xs sm:text-sm hover:underline flex items-center gap-1">
-          View All &rarr;
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5 mr-2">
+            <button 
+              onClick={() => scroll(-1)} 
+              className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-[#c8102e] flex items-center justify-center transition shadow-2xs active:scale-95"
+              aria-label="Previous categories"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button 
+              onClick={() => scroll(1)} 
+              className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-[#c8102e] flex items-center justify-center transition shadow-2xs active:scale-95"
+              aria-label="Next categories"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+          <Link to="/shop" className="text-[#c8102e] font-bold text-xs hover:text-red-800 transition flex items-center gap-1 group">
+            <span>View All</span>
+            <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+          </Link>
+        </div>
       </div>
 
-      {/* Auto-Rotating Category Circles */}
       <div 
         ref={scrollRef}
         onMouseEnter={() => setIsPaused(true)}
@@ -90,19 +116,24 @@ export default function CategoryGrid() {
       >
         {categories.map((cat) => (
           <Link
-            key={cat.slug}
-            to={`/occasion/${cat.slug}`}
+            key={cat.id || cat.slug}
+            to={`/category/${cat.slug}`}
             className="flex-shrink-0 group flex flex-col items-center w-20 sm:w-24 md:w-28 text-center"
           >
-            {/* Round Avatar Container with Image */}
-            <div className="w-18 h-18 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-md p-1 border-2 border-rose-100 group-hover:border-[#c8102e] group-hover:scale-105 transition-all duration-300 overflow-hidden flex items-center justify-center">
-              <img 
-                src={cat.image || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300&q=80'} 
-                alt={cat.name} 
-                className="w-full h-full object-cover rounded-full" 
-              />
+            <div className="relative w-18 h-18 sm:w-22 sm:h-22 md:w-26 md:h-26 rounded-full bg-linear-to-b from-rose-50 to-white shadow-sm p-1 ring-2 ring-rose-100/70 group-hover:ring-[#c8102e] group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300 overflow-hidden flex items-center justify-center">
+              {cat.image ? (
+                <img 
+                  src={cat.image} 
+                  alt={cat.name} 
+                  className="w-full h-full object-cover rounded-full group-hover:scale-108 transition-transform duration-500" 
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-linear-to-tr from-rose-100 to-rose-50 flex items-center justify-center text-[#c8102e] font-bold">
+                  <Gift size={24} className="opacity-75 group-hover:scale-115 transition-transform" />
+                </div>
+              )}
             </div>
-            <span className="text-xs sm:text-sm text-gray-700 font-medium leading-tight group-hover:text-[#c8102e] transition-colors mt-2">
+            <span className="text-xs sm:text-[13px] text-slate-800 font-semibold leading-tight group-hover:text-[#c8102e] transition-colors mt-2.5 truncate max-w-full px-1">
               {cat.name}
             </span>
           </Link>

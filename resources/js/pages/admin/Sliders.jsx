@@ -3,6 +3,13 @@ import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import { Upload, Trash2, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 
+const getImgUrl = (img) => {
+    if (!img) return null;
+    if (img.startsWith('http://') || img.startsWith('https://')) return img;
+    const clean = img.replace(/^\/?(storage\/)?/, '');
+    return `/storage/${clean}`;
+};
+
 export default function Sliders() {
     const [sliders, setSliders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,18 +19,25 @@ export default function Sliders() {
     const fetchSliders = () => {
         setLoading(true);
         axios.get('/api/sliders')
-            .then(res => setSliders(res.data))
-            .catch(() => {})
+            .then(res => {
+                const list = Array.isArray(res.data) 
+                    ? res.data 
+                    : (Array.isArray(res.data?.data) ? res.data.data : []);
+                setSliders(list);
+            })
+            .catch(() => setSliders([]))
             .finally(() => setLoading(false));
     };
 
     useEffect(() => { fetchSliders(); }, []);
 
+    const sliderList = Array.isArray(sliders) ? sliders : (Array.isArray(sliders?.data) ? sliders.data : []);
+
     const handleUpload = async (orderNum, file, link) => {
         if (!file && !link) return;
         setSaving(orderNum);
         setMsg('');
-        const existing = sliders.find(s => s.sort_order === orderNum);
+        const existing = sliderList.find(s => Number(s.sort_order) === Number(orderNum));
         const data = new FormData();
         data.append('sort_order', orderNum);
         data.append('is_active', 1);
@@ -33,14 +47,18 @@ export default function Sliders() {
         try {
             if (existing) {
                 data.append('_method', 'PUT');
-                await axios.post(`/api/sliders/${existing.id}`, data);
+                await axios.post(`/api/sliders/${existing.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             } else {
-                await axios.post('/api/sliders', data);
+                await axios.post('/api/sliders', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
             }
             setMsg(`Slide #${orderNum} updated successfully!`);
             fetchSliders();
         } catch (err) {
-            setMsg('Failed to update slide. Please try again.');
+            setMsg(err.response?.data?.message || 'Failed to update slide. Please try again.');
         } finally {
             setSaving(null);
         }
@@ -58,25 +76,21 @@ export default function Sliders() {
     const slots = [1, 2, 3, 4];
 
     return (
-        <AdminLayout>
-            <div className="mb-6 bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex items-center justify-between">
-                <div>
-                    <h2 className="text-xl font-normal text-slate-800">Home Page Slider Settings</h2>
-                    <p className="text-slate-400 text-xs mt-0.5">Manage up to 4 banner images shown in sequence (1 to 4).</p>
-                </div>
-                {msg && <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200">{msg}</span>}
-            </div>
-
+        <AdminLayout
+            pageTitle="Hero Sliders"
+            pageSubtitle="Configure up to 4 banner slides on storefront (Recommended Size: 1920 × 500 px)"
+            headerActions={msg && <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200">{msg}</span>}
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {slots.map(orderNum => {
-                    const slide = sliders.find(s => s.sort_order === orderNum);
-                    const imgUrl = slide?.image ? (slide.image.startsWith('http') ? slide.image : `/storage/${slide.image}`) : null;
+                    const slide = sliderList.find(s => Number(s.sort_order) === Number(orderNum));
+                    const imgUrl = getImgUrl(slide?.image);
 
                     return (
-                        <div key={orderNum} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+                        <div key={orderNum} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <span className="px-3 py-1 bg-blue-50 text-blue-700 font-medium text-xs rounded-full">Slide #{orderNum}</span>
+                                    <span className="px-3 py-1 bg-blue-50 text-blue-700 font-semibold text-xs rounded-full">Slide #{orderNum}</span>
                                     {slide ? (
                                         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium"><CheckCircle2 size={13} /> Active</span>
                                     ) : (
@@ -110,7 +124,7 @@ export default function Sliders() {
                             <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
                                 <label className="flex-1 cursor-pointer">
                                     <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
-                                        <Upload size={14} /> {slide ? 'Change Image' : 'Upload Image'}
+                                        <Upload size={14} /> {slide ? (saving === orderNum ? 'Saving...' : 'Change Image') : 'Upload Image'}
                                     </span>
                                     <input 
                                         type="file" 

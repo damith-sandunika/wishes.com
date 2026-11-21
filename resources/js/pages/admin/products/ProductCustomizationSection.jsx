@@ -1,32 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Palette, Sparkles, Gift } from 'lucide-react';
 import axios from 'axios';
-
-const DEFAULT_ADDONS = [
-    { id: 'card', name: 'Handwritten Greeting Card', price: 350, icon: '💌' },
-    { id: 'teddy', name: 'Mini Cuddle Teddy Bear', price: 1500, icon: '🧸' },
-    { id: 'ferrero', name: 'Ferrero Rocher Box', price: 950, icon: '🍫' },
-    { id: 'candle', name: 'Scented Vanilla Candle', price: 1200, icon: '🕯️' },
-];
+import ProductAddonsSelector from './ProductAddonsSelector';
 
 export default function ProductCustomizationSection({ form, setForm, label, inp, extraFiles, setExtraFiles }) {
     const colors = form.color_variations || [];
-    const addons = form.allowed_addons || ['card', 'teddy', 'ferrero', 'candle'];
     const occasions = form.occasions || [];
-    const [availableAddons, setAvailableAddons] = useState(DEFAULT_ADDONS);
     const [occasionsList, setOccasionsList] = useState([]);
 
     useEffect(() => {
-        axios.get('/api/public/settings').then(res => {
-            const raw = res.data?.gift_addons_options;
-            if (raw) {
-                try {
-                    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                    if (Array.isArray(parsed) && parsed.length > 0) setAvailableAddons(parsed.filter(a => a.active !== false));
-                } catch {}
-            }
-        }).catch(() => {});
-        axios.get('/api/public/occasions').then(res => setOccasionsList(res.data || [])).catch(() => {});
+        axios.get('/api/public/occasions')
+            .then(res => {
+                const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+                setOccasionsList(list);
+            })
+            .catch(() => setOccasionsList([]));
     }, []);
 
     const toggleOccasion = (slug) => {
@@ -49,11 +37,6 @@ export default function ProductCustomizationSection({ form, setForm, label, inp,
         setForm({ ...form, color_variations: colors.filter((_, i) => i !== index) });
     };
 
-    const toggleAddon = (id) => {
-        const next = addons.includes(id) ? addons.filter(a => a !== id) : [...addons, id];
-        setForm({ ...form, allowed_addons: next });
-    };
-
     return (
         <div className="space-y-6">
             {/* Extra Product Images (Up to 3 Extra Images) */}
@@ -66,7 +49,11 @@ export default function ProductCustomizationSection({ form, setForm, label, inp,
                         <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 text-center">
                             <span className="text-[10px] uppercase font-bold text-slate-400 block mb-2">Extra Image {idx + 1}</span>
                             {form.images && form.images[idx + 1] && !extraFiles[idx] && (
-                                <img src={`/storage/${form.images[idx + 1]}`} alt={`Extra ${idx + 1}`} className="w-12 h-12 mx-auto rounded object-cover mb-2 border border-slate-100" />
+                                <img 
+                                    src={form.images[idx + 1].startsWith('http') ? form.images[idx + 1] : `/storage/${form.images[idx + 1].replace(/^\/?(storage\/)?/, '')}`} 
+                                    alt={`Extra ${idx + 1}`} 
+                                    className="w-12 h-12 mx-auto rounded object-cover mb-2 border border-slate-100" 
+                                />
                             )}
                             <input 
                                 type="file" 
@@ -104,13 +91,13 @@ export default function ProductCustomizationSection({ form, setForm, label, inp,
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-center">
                                     <div>
                                         <label className="text-[10px] text-slate-500 uppercase font-medium">Color Name</label>
-                                        <input type="text" value={c.name} onChange={e => updateColor(i, 'name', e.target.value)} placeholder="e.g. Pink" className={inp} />
+                                        <input type="text" value={c.name || ''} onChange={e => updateColor(i, 'name', e.target.value)} placeholder="e.g. Pink" className={inp} />
                                     </div>
                                     <div>
                                         <label className="text-[10px] text-slate-500 uppercase font-medium">Color Code</label>
                                         <div className="flex items-center gap-2">
-                                            <input type="color" value={c.code} onChange={e => updateColor(i, 'code', e.target.value)} className="w-8 h-8 rounded border p-0.5 cursor-pointer" />
-                                            <input type="text" value={c.code} onChange={e => updateColor(i, 'code', e.target.value)} className={inp} />
+                                            <input type="color" value={c.code || '#c8102e'} onChange={e => updateColor(i, 'code', e.target.value)} className="w-8 h-8 rounded border p-0.5 cursor-pointer" />
+                                            <input type="text" value={c.code || '#c8102e'} onChange={e => updateColor(i, 'code', e.target.value)} className={inp} />
                                         </div>
                                     </div>
                                     <div>
@@ -151,21 +138,11 @@ export default function ProductCustomizationSection({ form, setForm, label, inp,
                     </label>
                 </div>
 
-                <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-500 block mb-2">Available Addon Items (Configured in Settings)</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {availableAddons.map(addon => (
-                            <label key={addon.id} className="flex items-center gap-2 text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200 cursor-pointer">
-                                <input type="checkbox" checked={addons.includes(addon.id)} onChange={() => toggleAddon(addon.id)} className="rounded text-[#1933C6] w-3.5 h-3.5" />
-                                <span>{addon.icon || '🎁'} {addon.name} (+Rs. {Number(addon.price).toLocaleString()})</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
+                <ProductAddonsSelector form={form} setForm={setForm} />
                 <div>
                     <label className="text-[10px] uppercase font-bold text-slate-500 block mb-2">Suitable Occasions</label>
                     <div className="flex flex-wrap gap-2">
-                        {occasionsList.map(occ => (
+                        {(Array.isArray(occasionsList) ? occasionsList : []).map(occ => (
                             <button key={occ.id} type="button" onClick={() => toggleOccasion(occ.slug)}
                                 className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${occasions.includes(occ.slug) ? 'bg-[#1933C6] text-white border-[#1933C6]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
                                 {occ.title}

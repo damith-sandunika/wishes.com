@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import ShopSidebar from '../components/shop/ShopSidebar';
+import PageHero from '../components/PageHero';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const DEFAULT_OCCASIONS = [
@@ -66,7 +67,10 @@ export default function Shop() {
   }, [searchParams, occasions]);
 
   useEffect(() => {
-    axios.get('/api/public/products').then(res => setAllProducts(res.data.map(formatProduct))).catch(console.error);
+    axios.get('/api/public/products').then(res => {
+      const list = Array.isArray(res.data) ? res.data : (res.data.data || []);
+      setAllProducts(list.map(formatProduct));
+    }).catch(console.error);
     axios.get('/api/public/categories').then(res => setCategories(res.data)).catch(console.error);
     axios.get('/api/public/occasions').then(res => {
       const list = res.data?.data || res.data;
@@ -102,45 +106,25 @@ export default function Shop() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="bg-pink-50 border-b border-pink-100 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-1">Shop Gifts</h1>
-            <p className="text-gray-500 text-sm max-w-md">Discover curated gifts tailored for life's most precious occasions.</p>
-            <div className="flex items-center gap-1 mt-3 text-xs text-gray-400">
-              <Link to="/" className="hover:text-brand">Home</Link>
-              <ChevronRight size={12} />
-              <span className="text-gray-600 font-medium">Shop</span>
-            </div>
-          </div>
-          <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=80" alt="Gifts" className="hidden md:block h-32 w-32 object-cover rounded-2xl shadow-md opacity-80" />
-        </div>
-      </div>
-
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
-            {occasions.map(o => (
-              <button key={o.label} onClick={() => { setActiveOccasion(o.label); setPage(1); }}
-                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${activeOccasion === o.label ? 'bg-brand text-white border-brand' : 'bg-white text-gray-600 border-gray-200 hover:border-brand hover:text-brand'}`}>
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PageHero
+        title="Shop Gifts"
+        subtitle="Discover curated gifts tailored for life's most precious occasions."
+        badge="Curated Collection"
+        breadcrumbs={[
+          { label: 'Home', to: '/' },
+          { label: 'Shop' },
+        ]}
+      />
 
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
         <div className="flex gap-6">
-          <ShopSidebar categories={categories} filters={filters} onFilterChange={(newF) => { setFilters(newF); setPage(1); }} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="hidden lg:block w-64 shrink-0">
+            <ShopSidebar categories={categories} filters={filters} onFilterChange={(newF) => { setFilters(newF); setPage(1); }} />
+          </div>
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2">
-                <button onClick={() => setSidebarOpen(true)} className="lg:hidden flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:border-brand">
-                  <SlidersHorizontal size={16} /> Filter
-                </button>
-                <span className="text-xs text-gray-500">Showing {Math.min((page-1)*PAGE_SIZE+1, filtered.length)}–{Math.min(page*PAGE_SIZE, filtered.length)} of <strong>{filtered.length}</strong></span>
-              </div>
+              <span className="text-xs text-gray-500">Showing {Math.min((page-1)*PAGE_SIZE+1, filtered.length)}–{Math.min(page*PAGE_SIZE, filtered.length)} of <strong>{filtered.length}</strong></span>
               <div className="flex items-center gap-2">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:border-brand">
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -152,9 +136,7 @@ export default function Shop() {
 
             <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 gap-4' : 'flex flex-col gap-4'}>
               {paged.map(p => (
-                <Link key={p.id} to={`/product/${p.id}`}>
-                  <ProductCard product={p} />
-                </Link>
+                <ProductCard key={p.id} product={p} />
               ))}
             </div>
 
@@ -170,6 +152,35 @@ export default function Shop() {
           </div>
         </div>
       </div>
+
+      {/* Floating Mobile Filter Button */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="lg:hidden fixed bottom-6 right-5 z-40 bg-[#990011] text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 font-medium text-xs hover:bg-[#7a000e] active:scale-95 transition-all border border-amber-200/30"
+        aria-label="Open Filters"
+      >
+        <SlidersHorizontal size={16} />
+        <span>Filter</span>
+      </button>
+
+      {/* Mobile Filter Drawer */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setSidebarOpen(false)} />
+          <div className="relative ml-auto w-full max-w-xs bg-white h-full overflow-y-auto p-4 shadow-2xl z-10">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+              <span className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                <SlidersHorizontal size={16} className="text-[#990011]" /> Filters
+              </span>
+              <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 text-sm font-bold">
+                ✕
+              </button>
+            </div>
+            <ShopSidebar categories={categories} filters={filters} onFilterChange={(newF) => { setFilters(newF); setPage(1); }} onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

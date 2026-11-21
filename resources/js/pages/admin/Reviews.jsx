@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
+import AdminStatusBadge from '../../components/admin/AdminStatusBadge';
 import axios from 'axios';
-import { Star, Search, Trash2, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
+import { Star, Search, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function AdminReviews() {
     const [reviews, setReviews] = useState([]);
@@ -12,8 +13,13 @@ export default function AdminReviews() {
     const fetchReviews = useCallback(() => {
         setLoading(true);
         axios.get('/api/reviews', { params: { search, rating: ratingFilter } })
-            .then(res => setReviews(res.data.data || res.data || []))
-            .catch(() => {})
+            .then(res => {
+                const list = Array.isArray(res.data) 
+                    ? res.data 
+                    : (Array.isArray(res.data?.data) ? res.data.data : []);
+                setReviews(list);
+            })
+            .catch(() => setReviews([]))
             .finally(() => setLoading(false));
     }, [search, ratingFilter]);
 
@@ -41,125 +47,75 @@ export default function AdminReviews() {
         }
     };
 
+    const reviewList = Array.isArray(reviews) 
+        ? reviews 
+        : (Array.isArray(reviews?.data) ? reviews.data : []);
+
     return (
-        <AdminLayout>
-            <div className="mb-4 sm:mb-6 bg-white rounded-md p-4 sm:p-5 shadow-sm border border-slate-200 flex sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                    <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                    <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
+        <AdminLayout
+            pageTitle="Customer Reviews"
+            pageSubtitle="Moderate product ratings, verify customer testimonials, and manage feedback."
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <select
+                        value={ratingFilter}
+                        onChange={e => setRatingFilter(e.target.value)}
+                        className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-blue-500 shadow-2xs"
+                    >
+                        <option value="">All Ratings</option>
+                        <option value="5">5 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="2">2 Stars</option>
+                        <option value="1">1 Star</option>
+                    </select>
                 </div>
-                <div className="relative z-10">
-                    <h2 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">Customer Reviews</h2>
-                    <p className="text-slate-400 text-[9px] sm:text-[11px] font-normal uppercase tracking-widest mt-1">Moderate & Inspect Reviews</p>
-                </div>
-                <div className="relative z-10 text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
-                    Total: <span className="text-[#1933C6] font-bold">{reviews.length}</span>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-                <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-gray-50/50">
-                    <div className="relative w-full sm:w-80 group">
-                        <Search size={16} className="absolute inset-y-0 left-3 my-auto text-gray-400 group-focus-within:text-[#1933C6]" />
-                        <input
-                            type="text"
-                            placeholder="Search by customer, product, keyword..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#1933C6] shadow-sm"
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <label className="text-xs text-gray-500">Filter Stars:</label>
-                        <select
-                            value={ratingFilter}
-                            onChange={e => setRatingFilter(e.target.value)}
-                            className="px-3 py-2 bg-white border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-[#1933C6]"
-                        >
-                            <option value="">All Ratings</option>
-                            <option value="5">5 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="2">2 Stars</option>
-                            <option value="1">1 Star</option>
-                        </select>
-                    </div>
-                </div>
-
+            }
+        >
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                                <th className="text-left px-6 py-3">Product</th>
-                                <th className="text-left px-6 py-3">Reviewer</th>
-                                <th className="text-left px-6 py-3">Rating</th>
-                                <th className="text-left px-6 py-3">Feedback</th>
-                                <th className="text-left px-6 py-3">Status</th>
-                                <th className="text-right px-6 py-3">Actions</th>
+                    <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
+                            <tr>
+                                <th className="px-5 py-3.5">Product</th>
+                                <th className="px-5 py-3.5">Customer & Rating</th>
+                                <th className="px-5 py-3.5">Review Comment</th>
+                                <th className="px-5 py-3.5">Date</th>
+                                <th className="px-5 py-3.5">Status</th>
+                                <th className="px-5 py-3.5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                [...Array(4)].map((_, i) => (
-                                    <tr key={i}><td colSpan="6" className="px-6 py-4"><div className="h-6 bg-gray-100 rounded animate-pulse" /></td></tr>
-                                ))
-                            ) : reviews.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="text-center py-12 text-gray-400">
-                                        <MessageSquare size={32} className="mx-auto mb-2 text-gray-300" />
-                                        No customer reviews found.
-                                    </td>
-                                </tr>
-                            ) : reviews.map((r) => (
-                                <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            {r.product?.images?.[0] ? (
-                                                <img src={`/storage/${r.product.images[0]}`} alt="" className="w-9 h-9 rounded-lg object-cover border border-gray-200" />
-                                            ) : (
-                                                <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#1933C6] flex items-center justify-center text-xs font-bold">W</div>
-                                            )}
-                                            <div>
-                                                <span className="font-medium text-slate-900 block truncate max-w-[160px]">{r.product?.name || 'Deleted Product'}</span>
-                                                <span className="text-[10px] text-gray-400 font-mono">{r.product?.sku}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="font-medium text-slate-800 block">{r.author_name}</span>
-                                        <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex text-amber-400 items-center">
-                                            {[...Array(5)].map((_, idx) => (
-                                                <Star key={idx} size={13} className={idx < r.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading reviews...</td></tr>
+                            ) : reviewList.length === 0 ? (
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">No customer reviews found.</td></tr>
+                            ) : reviewList.map(r => (
+                                <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                                    <td className="px-5 py-4 font-bold text-slate-900">{r.product?.name || '—'}</td>
+                                    <td className="px-5 py-4">
+                                        <div className="font-bold text-slate-800">{r.customer_name}</div>
+                                        <div className="flex items-center gap-0.5 text-amber-500 mt-0.5">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} size={12} fill={i < r.rating ? 'currentColor' : 'none'} className={i < r.rating ? 'text-amber-400' : 'text-slate-300'} />
                                             ))}
-                                            <span className="ml-1.5 text-xs text-gray-700 font-semibold">{r.rating}.0</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 max-w-xs">
-                                        {r.title && <p className="font-medium text-xs text-gray-900 mb-0.5">{r.title}</p>}
-                                        <p className="text-xs text-gray-600 line-clamp-2">{r.content}</p>
+                                    <td className="px-5 py-4 text-slate-600 max-w-sm">{r.comment}</td>
+                                    <td className="px-5 py-4 text-slate-400 font-mono text-[11px]">{new Date(r.created_at).toLocaleDateString()}</td>
+                                    <td className="px-5 py-4">
+                                        <AdminStatusBadge status={r.is_approved ? 'Active' : 'Pending'} />
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <button
-                                            onClick={() => toggleApprove(r.id)}
-                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition ${
-                                                r.is_approved ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                            }`}
-                                        >
-                                            {r.is_approved ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                                            {r.is_approved ? 'Approved' : 'Pending'}
-                                        </button>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => destroy(r.id)}
-                                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                                            title="Delete Review"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                    <td className="px-5 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <button onClick={() => toggleApprove(r.id)} className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 ${r.is_approved ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
+                                                {r.is_approved ? <XCircle size={13} /> : <CheckCircle2 size={13} />}
+                                                {r.is_approved ? 'Unapprove' : 'Approve'}
+                                            </button>
+                                            <button onClick={() => destroy(r.id)} className="px-2.5 py-1 text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1">
+                                                <Trash2 size={13} /> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

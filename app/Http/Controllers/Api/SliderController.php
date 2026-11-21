@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Slider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class SliderController extends Controller
@@ -16,7 +19,11 @@ class SliderController extends Controller
 
     public function publicIndex()
     {
-        return response()->json(Slider::where('is_active', true)->orderBy('sort_order')->get());
+        $sliders = Slider::where('is_active', true)->orderBy('sort_order')->get();
+        if ($sliders->isEmpty()) {
+            $sliders = Slider::orderBy('sort_order')->get();
+        }
+        return response()->json($sliders);
     }
 
     public function store(Request $request)
@@ -35,6 +42,8 @@ class SliderController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active', true);
         $slider = Slider::create($validated);
+
+        Cache::forget('public_sliders_active');
 
         return response()->json($slider, 201);
     }
@@ -69,6 +78,8 @@ class SliderController extends Controller
 
         $slider->update($validated);
 
+        Cache::forget('public_sliders_active');
+
         return response()->json($slider);
     }
 
@@ -78,6 +89,8 @@ class SliderController extends Controller
             Storage::disk('public')->delete($slider->image);
         }
         $slider->delete();
+
+        Cache::forget('public_sliders_active');
 
         return response()->json(['message' => 'Slider deleted successfully']);
     }

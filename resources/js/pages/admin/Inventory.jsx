@@ -21,10 +21,15 @@ export default function Inventory() {
                 axios.get('/api/products'),
                 axios.get('/api/suppliers'),
             ]);
-            setProducts(prodRes.data.data || prodRes.data);
-            setSuppliers(supRes.data.data || supRes.data);
+            const allProds = Array.isArray(prodRes.data) 
+                ? prodRes.data 
+                : (Array.isArray(prodRes.data?.data) ? prodRes.data.data : []);
+            const allSups = Array.isArray(supRes.data) 
+                ? supRes.data 
+                : (Array.isArray(supRes.data?.data) ? supRes.data.data : []);
+            setProducts(allProds);
+            setSuppliers(allSups);
             
-            const allProds = prodRes.data.data || prodRes.data;
             const now = new Date();
             const exp = allProds.filter(p => {
                 if (!p.expiry_date) return false;
@@ -40,19 +45,13 @@ export default function Inventory() {
         setLoading(false);
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
     const handleRestockChange = (id, field, value) => {
         setRestockData(prev => ({
             ...prev,
-            [id]: {
-                ...prev[id],
-                [field]: value
-            }
+            [id]: { ...prev[id], [field]: value }
         }));
-        // Auto-select row if they type a quantity
         if (field === 'quantity' && value && !selectedIds.includes(id)) {
             setSelectedIds(prev => [...prev, id]);
         }
@@ -69,10 +68,7 @@ export default function Inventory() {
 
     const submitBulkRestock = async () => {
         const toRestock = selectedIds.filter(id => restockData[id]?.quantity > 0);
-        
-        if (toRestock.length === 0) {
-            return alert("Please enter quantities for the selected products.");
-        }
+        if (toRestock.length === 0) return alert("Please enter quantities for the selected products.");
 
         setLoading(true);
         try {
@@ -88,38 +84,36 @@ export default function Inventory() {
                     notes: 'Bulk Restocked via Admin'
                 });
             }));
-            
             setRestockData({});
             setSelectedIds([]);
             fetchData();
             alert("Bulk restock completed successfully!");
-        } catch (err) {
+        } catch {
             alert('Failed to restock some items. Please check again.');
             fetchData();
         }
     };
 
     return (
-        <AdminLayout>
-            <div className="mb-4 sm:mb-6 bg-white rounded-md p-4 sm:p-5 shadow-sm border border-slate-200 flex sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                    <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                    <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
-                    <div className="w-48 h-48 bg-blue-200 rotate-45 -ml-12 rounded-2xl"></div>
-                    <div className="w-32 h-32 bg-blue-300 rotate-45 -ml-16 rounded-lg"></div>
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">Inventory Management</h2>
-                    <p className="text-slate-400 text-[9px] sm:text-[11px] font-normal uppercase tracking-widest mt-1">Bulk Restock & Monitor</p>
-                </div>
-            </div>
+        <AdminLayout
+            pageTitle="Inventory Management"
+            pageSubtitle="Bulk restock catalog items and track expiration dates"
+            headerActions={
+                <button 
+                    onClick={submitBulkRestock}
+                    disabled={selectedIds.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <PackagePlus size={16} /> Restock Selected ({selectedIds.length})
+                </button>
+            }
+        >
 
-            {/* Mobile & Desktop Action Bar */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <label className="text-xs font-normal text-slate-500 uppercase tracking-wider">Global Supplier:</label>
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Global Supplier:</label>
                     <select 
-                        className="border border-slate-200 rounded-md px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#1933C6] focus:border-[#1933C6] outline-none"
+                        className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-slate-50 focus:bg-white focus:ring-1 focus:ring-blue-600 outline-none"
                         value={globalSupplier}
                         onChange={e => setGlobalSupplier(e.target.value)}
                     >
@@ -127,32 +121,24 @@ export default function Inventory() {
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-4 sm:pt-0">
-                    <span className="text-sm font-normal text-slate-700 sm:hidden">{selectedIds.length} Selected</span>
-                    <button 
-                        onClick={submitBulkRestock}
-                        disabled={selectedIds.length === 0}
-                        className="bg-[#1933C6] hover:bg-[#090087] text-white px-6 py-2.5 rounded-md text-[11px] font-normal uppercase tracking-widest shadow-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
-                    >
-                        <PackagePlus size={16} />
-                        Restock ({selectedIds.length})
-                    </button>
-                </div>
+                <span className="text-xs font-medium text-slate-500">
+                    {selectedIds.length} of {products.length} products selected
+                </span>
             </div>
 
             {expiring.length > 0 && (
-                <div className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl shadow-sm">
-                    <h3 className="text-red-800 font-normal flex items-center gap-2 mb-3 text-sm">
-                        <AlertCircle size={18} /> Expiring Soon (Within 30 Days)
+                <div className="mb-6 bg-rose-50 border border-rose-200 p-4 rounded-xl shadow-xs">
+                    <h3 className="text-rose-800 font-bold flex items-center gap-2 mb-3 text-xs uppercase tracking-wider">
+                        <AlertCircle size={16} /> Expiring Soon (Within 30 Days)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {expiring.map(p => (
-                            <div key={p.id} className="bg-white p-3 rounded-lg border border-red-100 shadow-sm flex items-center justify-between">
+                            <div key={p.id} className="bg-white p-3 rounded-lg border border-rose-100 shadow-xs flex items-center justify-between">
                                 <div>
-                                    <p className="font-normal text-slate-800 text-sm">{p.name}</p>
-                                    <p className="text-xs text-red-500 font-normal mt-0.5">Expires: {new Date(p.expiry_date).toLocaleDateString()}</p>
+                                    <p className="font-semibold text-slate-800 text-xs">{p.name}</p>
+                                    <p className="text-[11px] text-rose-500 font-medium mt-0.5">Expires: {new Date(p.expiry_date).toLocaleDateString()}</p>
                                 </div>
-                                <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-normal">{p.current_stock}</span>
+                                <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">{p.current_stock}</span>
                             </div>
                         ))}
                     </div>
@@ -170,7 +156,6 @@ export default function Inventory() {
                 globalSupplier={globalSupplier}
                 loading={loading}
             />
-            
         </AdminLayout>
     );
 }

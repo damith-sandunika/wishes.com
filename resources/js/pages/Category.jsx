@@ -4,6 +4,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
+import PageHero from '../components/PageHero';
 import { Gift, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 
 export default function Category() {
@@ -24,7 +25,8 @@ export default function Category() {
             const currentCat = catRes.data.find(c => c.id == id || c.slug === id);
             setCategory(currentCat || { name: 'Gift Collection', description: 'Curated gifts for every special occasion.' });
 
-            const catProds = prodRes.data.filter(p => {
+            const rawList = Array.isArray(prodRes.data) ? prodRes.data : (prodRes.data.data || []);
+            const catProds = rawList.filter(p => {
                 if (currentCat) return p.category_id === currentCat.id;
                 return p.category_id == id;
             }).map(p => ({
@@ -33,7 +35,7 @@ export default function Category() {
                 price: p.discount_price || p.selling_price,
                 oldPrice: p.discount_price ? p.selling_price : null,
                 discount: p.discount_price ? Math.round(((p.selling_price - p.discount_price) / p.selling_price) * 100) : 0,
-                image: p.images?.length > 0 
+                image: p.images?.length > 0
                     ? (p.images[0].startsWith('http') ? p.images[0] : `/storage/${p.images[0]}`)
                     : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=80',
                 rating: 4.8,
@@ -56,29 +58,16 @@ export default function Category() {
 
             <main className="flex-1">
                 {/* Hero Banner */}
-                <div className="bg-gradient-to-r from-red-700 to-rose-600 text-white py-12 px-4 shadow-inner">
-                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div>
-                            <nav className="flex items-center gap-2 text-rose-200 text-xs mb-3">
-                                <Link to="/" className="hover:underline">Home</Link>
-                                <span>/</span>
-                                <Link to="/shop" className="hover:underline">Shop</Link>
-                                <span>/</span>
-                                <span className="text-white font-medium">{category?.name}</span>
-                            </nav>
-                            <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2">
-                                {category?.name || 'Gifts'}
-                            </h1>
-                            <p className="text-rose-100 text-sm md:text-base max-w-xl">
-                                {category?.description || 'Browse our best-selling gifts and create unforgettable memories.'}
-                            </p>
-                        </div>
-                        <div className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20">
-                            <Gift className="text-white" size={24} />
-                            <span className="text-sm font-medium">Islandwide Delivery Available</span>
-                        </div>
-                    </div>
-                </div>
+                <PageHero
+                    title={category?.name || 'Gifts'}
+                    subtitle={category?.description || 'Browse our best-selling gifts and create unforgettable memories.'}
+                    badge="Category Collection"
+                    breadcrumbs={[
+                        { label: 'Home', to: '/' },
+                        { label: 'Shop', to: '/shop' },
+                        { label: category?.name || 'Category' }
+                    ]}
+                />
 
                 {/* Content */}
                 <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
@@ -89,8 +78,8 @@ export default function Category() {
                         </span>
                         <div className="flex items-center gap-3">
                             <span className="text-xs text-gray-400 font-medium">Sort by:</span>
-                            <select 
-                                value={sortBy} 
+                            <select
+                                value={sortBy}
                                 onChange={e => setSortBy(e.target.value)}
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 outline-none focus:ring-2 focus:ring-brand"
                             >

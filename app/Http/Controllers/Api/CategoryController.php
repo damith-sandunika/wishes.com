@@ -1,17 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        return response()->json(Category::orderBy('sort_order')->get());
+        $categories = Category::where('status', true)->orderBy('sort_order')->get();
+        if ($categories->isEmpty()) {
+            $categories = Category::orderBy('sort_order')->get();
+        }
+        return response()->json($categories);
     }
 
     public function store(Request $request)
@@ -33,6 +40,8 @@ class CategoryController extends Controller
         $validated['slug'] = Str::slug($validated['name']);
         
         $category = Category::create($validated);
+
+        Cache::forget('public_categories');
 
         return response()->json($category, 201);
     }
@@ -57,7 +66,7 @@ class CategoryController extends Controller
         } elseif ($request->image === 'null') {
             $validated['image'] = null;
         } else {
-            unset($validated['image']); // Don't override if not sent or sent as string path
+            unset($validated['image']);
         }
 
         if ($request->name !== $category->name) {
@@ -66,12 +75,15 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
+        Cache::forget('public_categories');
+
         return response()->json($category);
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
+        Cache::forget('public_categories');
         return response()->json(['message' => 'Category deleted successfully']);
     }
 }

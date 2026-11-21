@@ -2,6 +2,7 @@ import React from 'react';
 import { Heart, Gift, Truck, Star } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 
 const stats = [
   { icon: <Heart className="w-7 h-7 text-[#dc2626]" />, label: '5000+', sub: 'Happy Customers' },
@@ -17,13 +18,15 @@ export default function About() {
       <main className="flex-1">
 
         {/* Hero */}
-        <section className="relative bg-gradient-to-br from-gray-900 via-[#7f1d1d] to-[#dc2626] text-white py-24 text-center px-4">
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <Heart className="w-14 h-14 mx-auto mb-4 opacity-80" />
-            <h1 className="text-4xl font-bold mb-3">About Wishes.com</h1>
-            <p className="text-lg text-red-100">Your trusted online gift shop for every occasion</p>
-          </div>
-        </section>
+        <PageHero
+          title="About Wishes.com"
+          subtitle="Your trusted online luxury gift boutique delivering smiles across Sri Lanka."
+          badge="Our Story & Vision"
+          breadcrumbs={[
+            { label: 'Home', to: '/' },
+            { label: 'About Us' }
+          ]}
+        />
 
         {/* Story */}
         <section className="max-w-6xl mx-auto px-4 py-14 grid md:grid-cols-2 gap-10 items-center">

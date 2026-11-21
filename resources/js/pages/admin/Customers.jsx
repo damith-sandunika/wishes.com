@@ -1,58 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
-
-const tabs = ['All Customers', 'WhatsApp Verified', 'New'];
+import axios from 'axios';
+import { Search, UserCheck, ShoppingBag } from 'lucide-react';
 
 export default function AdminCustomers() {
-    const [activeTab, setActiveTab] = useState('All Customers');
+    const [customers, setCustomers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+
+    const fetchCustomers = useCallback(() => {
+        setLoading(true);
+        axios.get(`/api/customers?search=${encodeURIComponent(search)}`)
+            .then(res => setCustomers(res.data?.data || []))
+            .catch(() => { })
+            .finally(() => setLoading(false));
+    }, [search]);
+
+    useEffect(() => {
+        const timeout = setTimeout(fetchCustomers, 300);
+        return () => clearTimeout(timeout);
+    }, [fetchCustomers]);
 
     return (
-        <AdminLayout>
-            {/* Page Header */}
-            <div className="mb-4 sm:mb-6 bg-white rounded-md p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative overflow-hidden">
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none opacity-60">
-                    <div className="w-24 h-24 bg-blue-50 rotate-45 translate-x-12 rounded-lg"></div>
-                    <div className="w-36 h-36 bg-blue-100 rotate-45 translate-x-6 -ml-8 rounded-xl"></div>
-                    <div className="w-48 h-48 bg-blue-200 rotate-45 -ml-12 rounded-2xl"></div>
-                    <div className="w-32 h-32 bg-blue-300 rotate-45 -ml-16 rounded-lg"></div>
+        <AdminLayout
+            pageTitle="Customers"
+            pageSubtitle="View and manage registered customer accounts & purchase history"
+        >
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/50">
+                    <div className="relative w-full sm:w-80">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <Search size={16} />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search customer by name or email..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-600 transition shadow-xs"
+                        />
+                    </div>
+                    <div className="text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs">
+                        Registered Customers: <span className="text-blue-600 font-bold">{customers.length}</span>
+                    </div>
                 </div>
-                <div className="relative z-10">
-                    <h2 className="text-xl sm:text-2xl font-normal text-slate-800 tracking-tight">Customers</h2>
-                    <p className="text-slate-400 text-[9px] sm:text-[11px] font-normal uppercase tracking-widest mt-1">View and manage customer accounts</p>
-                </div>
-            </div>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200 mb-6 flex overflow-x-auto custom-scrollbar">
-                {tabs.map(tab => (
-                    <button 
-                        key={tab} 
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-6 py-3 text-sm font-normal transition-colors border-b-2 whitespace-nowrap ${
-                            activeTab === tab 
-                            ? 'border-[#1933C6] text-[#1933C6]' 
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th className="text-left px-6 py-3">Customer</th>
-                                <th className="text-left px-6 py-3">WhatsApp</th>
-                                <th className="text-left px-6 py-3">Total Orders</th>
-                                <th className="text-left px-6 py-3">Total Spent</th>
-                                <th className="text-left px-6 py-3">Joined</th>
+                                <th className="px-6 py-3.5 font-semibold">Customer</th>
+                                <th className="px-6 py-3.5 font-semibold">Email</th>
+                                <th className="px-6 py-3.5 font-semibold">Total Orders</th>
+                                <th className="px-6 py-3.5 font-semibold">Total Spent</th>
+                                <th className="px-6 py-3.5 text-right font-semibold">Joined Date</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr><td colSpan="5" className="text-center py-16 text-gray-400">No customers found</td></tr>
+                        <tbody className="divide-y divide-slate-100">
+                            {loading ? (
+                                <tr><td colSpan="5" className="text-center py-12 text-slate-400">Loading customers...</td></tr>
+                            ) : customers.length === 0 ? (
+                                <tr><td colSpan="5" className="text-center py-12 text-slate-400">No registered customers found.</td></tr>
+                            ) : customers.map(u => (
+                                <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                                    <td className="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                                            {u.name?.charAt(0) || 'U'}
+                                        </div>
+                                        {u.name}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600 text-xs">{u.email}</td>
+                                    <td className="px-6 py-4 font-semibold text-slate-800">
+                                        <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                            <ShoppingBag size={12} className="text-slate-500" /> {u.orders_count || 0}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-emerald-600 font-semibold">
+                                        Rs. {Number(u.orders_sum_grand_total || 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-slate-400 text-xs">
+                                        {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>

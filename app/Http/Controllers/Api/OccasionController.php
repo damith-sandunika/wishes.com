@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Occasion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class OccasionController extends Controller
@@ -41,6 +44,9 @@ class OccasionController extends Controller
         }
 
         $occasion = Occasion::create($validated);
+
+        Cache::forget('public_occasions_active');
+
         return response()->json($occasion, 201);
     }
 
@@ -71,12 +77,18 @@ class OccasionController extends Controller
         }
 
         $occasion->update($validated);
+
+        Cache::forget('public_occasions_active');
+
         return response()->json($occasion);
     }
 
     public function destroy(Occasion $occasion)
     {
         $occasion->delete();
+
+        Cache::forget('public_occasions_active');
+
         return response()->json(['message' => 'Occasion deleted successfully']);
     }
 }

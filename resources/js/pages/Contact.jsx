@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Phone, Mail, MapPin, MessageCircle, Send } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PageHero from '../components/PageHero';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -17,8 +18,16 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-12">
-        <h1 className="text-2xl font-bold text-gray-800 mb-8">Get In Touch</h1>
+      <PageHero
+        title="Contact Wishes.com"
+        subtitle="We are here to assist with your bespoke gifting inquiries and celebration orders."
+        badge="24/7 Concierge"
+        breadcrumbs={[
+          { label: 'Home', to: '/' },
+          { label: 'Contact Us' }
+        ]}
+      />
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
 
           {/* Contact Form */}

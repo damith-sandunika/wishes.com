@@ -1,76 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Product::with(['category', 'reviews'])->latest()->get());
+        $query = Product::with(['category', 'reviews']);
+
+        if (!$request->user() || !$request->user()->isAdmin()) {
+            $query->active();
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('sku', 'like', "%{$s}%")
+                  ->orWhere('short_description', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('min_price')) {
+            $query->where('selling_price', '>=', (float)$request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('selling_price', '<=', (float)$request->max_price);
+        }
+
+        match ($request->get('sort', 'latest')) {
+            'price_asc' => $query->orderBy('selling_price', 'asc'),
+            'price_desc' => $query->orderBy('selling_price', 'desc'),
+            'name_asc' => $query->orderBy('name', 'asc'),
+            default => $query->latest(),
+        };
+
+        if ($request->has('page') || $request->has('per_page') || $request->boolean('paginate')) {
+            $perPage = min(100, max(1, (int)$request->get('per_page', 12)));
+            return response()->json($query->paginate($perPage));
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|unique:products',
-            'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
-            'images' => 'nullable',
-            'color_variations' => 'nullable',
-            'allowed_addons' => 'nullable',
-            'occasions' => 'nullable',
-            'occasions' => 'nullable',
-            'enable_personalization' => 'nullable|boolean',
-            'enable_wrapping' => 'nullable|boolean',
-            'brand' => 'nullable|string',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'current_stock' => 'nullable|integer',
-            'selling_price' => 'required|numeric',
-            'discount_price' => 'nullable|numeric',
-            'status' => 'nullable|boolean',
-            'stock_availability' => 'nullable|boolean',
-        ]);
-
-        $validated['slug'] = Str::slug($validated['name']);
-        $images = [];
-
-        if ($request->hasFile('image')) {
-            $images[] = $request->file('image')->store('products', 'public');
-        }
-        if ($request->hasFile('extra_images')) {
-            foreach ($request->file('extra_images') as $f) {
-                $images[] = $f->store('products', 'public');
-            }
-        }
-        if ($request->filled('images')) {
-            $parsed = is_string($request->images) ? json_decode($request->images, true) : $request->images;
-            if (is_array($parsed)) $images = array_merge($images, $parsed);
-        }
-        $validated['images'] = array_values(array_unique(array_filter($images)));
-
-        if ($request->has('color_variations')) {
-            $validated['color_variations'] = is_string($request->color_variations) 
-                ? json_decode($request->color_variations, true) : $request->color_variations;
-        }
-        if ($request->has('allowed_addons')) {
-            $validated['allowed_addons'] = is_string($request->allowed_addons) 
-                ? json_decode($request->allowed_addons, true) : $request->allowed_addons;
-        }
-        if ($request->has('occasions')) {
-            $validated['occasions'] = is_string($request->occasions) 
-                ? json_decode($request->occasions, true) : $request->occasions;
-        }
+        $validated = $this->validateProduct($request);
+        $validated['slug'] = Str::slug($validated['name']) . '-' . Str::lower(Str::random(4));
+        $validated['images'] = $this->processProductImages($request);
+        $validated['color_variations'] = $this->parseJsonField($request->color_variations);
+        $validated['allowed_addons'] = $this->parseJsonField($request->allowed_addons);
+        $validated['occasions'] = $this->parseJsonField($request->occasions);
         $validated['enable_personalization'] = $request->boolean('enable_personalization', false);
         $validated['enable_wrapping'] = $request->boolean('enable_wrapping', true);
 
         $product = Product::create($validated);
+        Cache::forget('public_products_active');
+
         return response()->json($product->load(['category', 'reviews']), 201);
     }
 
@@ -81,64 +80,21 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|unique:products,sku,' . $product->id,
-            'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
-            'images' => 'nullable',
-            'color_variations' => 'nullable',
-            'allowed_addons' => 'nullable',
-            'occasions' => 'nullable',
-            'occasions' => 'nullable',
-            'enable_personalization' => 'nullable|boolean',
-            'enable_wrapping' => 'nullable|boolean',
-            'brand' => 'nullable|string',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'current_stock' => 'nullable|integer',
-            'selling_price' => 'required|numeric',
-            'discount_price' => 'nullable|numeric',
-            'status' => 'nullable|boolean',
-            'stock_availability' => 'nullable|boolean',
-        ]);
-
+        $validated = $this->validateProduct($request, $product->id);
         if ($request->name !== $product->name) {
-            $validated['slug'] = Str::slug($validated['name']);
+            $validated['slug'] = Str::slug($validated['name']) . '-' . Str::lower(Str::random(4));
         }
 
-        $images = $product->images ?? [];
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            if (!empty($images)) $images[0] = $path; else $images[] = $path;
-        }
-        if ($request->hasFile('extra_images')) {
-            foreach ($request->file('extra_images') as $f) {
-                $images[] = $f->store('products', 'public');
-            }
-        }
-        if ($request->filled('images')) {
-            $parsed = is_string($request->images) ? json_decode($request->images, true) : $request->images;
-            if (is_array($parsed)) $images = array_merge($images, $parsed);
-        }
-        $validated['images'] = array_values(array_unique(array_filter($images)));
-
-        if ($request->has('color_variations')) {
-            $validated['color_variations'] = is_string($request->color_variations) 
-                ? json_decode($request->color_variations, true) : $request->color_variations;
-        }
-        if ($request->has('allowed_addons')) {
-            $validated['allowed_addons'] = is_string($request->allowed_addons) 
-                ? json_decode($request->allowed_addons, true) : $request->allowed_addons;
-        }
-        if ($request->has('occasions')) {
-            $validated['occasions'] = is_string($request->occasions) 
-                ? json_decode($request->occasions, true) : $request->occasions;
-        }
+        $validated['images'] = $this->processProductImages($request, $product->images ?? []);
+        if ($request->has('color_variations')) $validated['color_variations'] = $this->parseJsonField($request->color_variations);
+        if ($request->has('allowed_addons')) $validated['allowed_addons'] = $this->parseJsonField($request->allowed_addons);
+        if ($request->has('occasions')) $validated['occasions'] = $this->parseJsonField($request->occasions);
         $validated['enable_personalization'] = $request->boolean('enable_personalization', false);
         $validated['enable_wrapping'] = $request->boolean('enable_wrapping', true);
 
         $product->update($validated);
+        Cache::forget('public_products_active');
+
         return response()->json($product->load(['category', 'reviews']));
     }
 
@@ -153,10 +109,10 @@ class ProductController extends Controller
 
         $review = $product->reviews()->create([
             'user_id' => auth('sanctum')->id() ?? auth()->id(),
-            'author_name' => $validated['author_name'],
+            'author_name' => strip_tags($validated['author_name']),
             'rating' => $validated['rating'],
-            'title' => $validated['title'] ?? 'Wonderful gift',
-            'content' => $validated['content'],
+            'title' => strip_tags($validated['title'] ?? 'Wonderful gift'),
+            'content' => strip_tags($validated['content']),
             'is_approved' => true,
         ]);
 
@@ -166,6 +122,52 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
+        Cache::forget('public_products_active');
         return response()->json(['message' => 'Product deleted successfully']);
+    }
+
+    private function validateProduct(Request $request, ?int $ignoreId = null): array
+    {
+        $skuRule = $ignoreId ? "nullable|string|unique:products,sku,{$ignoreId}" : 'nullable|string|unique:products';
+        return $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'sku' => $skuRule,
+            'short_description' => 'nullable|string',
+            'description' => 'nullable|string',
+            'brand' => 'nullable|string|max:100',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'unit_type' => 'nullable|string|max:50',
+            'current_stock' => 'nullable|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'status' => 'nullable|boolean',
+            'stock_availability' => 'nullable|boolean',
+        ]);
+    }
+
+    private function processProductImages(Request $request, array $existing = []): array
+    {
+        $images = is_array($existing) ? $existing : [];
+        if ($request->filled('images')) {
+            $parsed = is_string($request->images) ? json_decode($request->images, true) : $request->images;
+            if (is_array($parsed) && !empty($parsed)) $images = $parsed;
+        }
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            if (!empty($images)) $images[0] = $path; else $images[] = $path;
+        }
+        if ($request->hasFile('extra_images')) {
+            foreach ($request->file('extra_images') as $f) {
+                $images[] = $f->store('products', 'public');
+            }
+        }
+        return array_values(array_unique(array_filter($images)));
+    }
+
+    private function parseJsonField(mixed $val): ?array
+    {
+        if (is_null($val)) return null;
+        return is_string($val) ? json_decode($val, true) : (is_array($val) ? $val : null);
     }
 }

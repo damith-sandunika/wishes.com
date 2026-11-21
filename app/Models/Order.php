@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -29,6 +33,8 @@ class Order extends Model
         'payment_status',
         'delivery_status',
         'delivery_charge',
+        'additional_charge',
+        'additional_charge_note',
         'sub_total',
         'discount_amount',
         'coupon_code',
@@ -40,16 +46,27 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'delivery_charge' => 'float',
-        'sub_total' => 'float',
-        'discount_amount' => 'float',
-        'grand_total' => 'float',
+        'delivery_charge' => 'decimal:2',
+        'additional_charge' => 'decimal:2',
+        'sub_total' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'grand_total' => 'decimal:2',
         'gift_wrapping' => 'boolean',
         'delivery_date' => 'date',
     ];
 
-    public function items()
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->latest();
     }
 }

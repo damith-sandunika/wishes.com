@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Orders\CreateOrderAction;
+use App\Actions\Orders\UpdateOrderStatusAction;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendWhatsAppOrderNotification;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
@@ -15,11 +18,31 @@ class OrderController extends Controller
     {
         $perPage = min(100, max(10, (int)$request->get('per_page', 25)));
         
-        if ($request->boolean('all')) {
-            return response()->json(Order::with('items')->latest()->get());
+        $query = Order::with(['items', 'statusHistories'])->latest();
+
+        if ($request->filled('status')) {
+            $query->where('delivery_status', $request->status);
         }
 
-        return response()->json(Order::with('items')->latest()->paginate($perPage));
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function($q) use ($s) {
+                $q->where('invoice_number', 'like', "%{$s}%")
+                  ->orWhere('tracking_number', 'like', "%{$s}%")
+                  ->orWhere('customer_name', 'like', "%{$s}%")
+                  ->orWhere('whatsapp_number', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->boolean('all')) {
+            return response()->json($query->get());
+        }
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request, CreateOrderAction $createOrderAction)
@@ -61,6 +84,7 @@ class OrderController extends Controller
 
         $slipPath = null;
         if ($request->hasFile('payment_slip')) {
+            // Secure slip storage in private/protected disk if possible, else standard public
             $slipPath = $request->file('payment_slip')->store('slips', 'public');
         }
 
@@ -71,38 +95,44 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        return response()->json($order->load('items'));
+        return response()->json($order->load(['items', 'statusHistories', 'user']));
     }
 
-    public function update(Request $request, Order $order)
+    public function update(Request $request, Order $order, UpdateOrderStatusAction $updateOrderStatusAction)
     {
         $validated = $request->validate([
-            'payment_status' => 'nullable|string',
-            'delivery_status' => 'nullable|string',
+            'payment_status' => 'nullable|string|max:50',
+            'delivery_status' => 'nullable|string|max:50',
+            'additional_charge' => 'nullable|numeric|min:0',
+            'additional_charge_note' => 'nullable|string|max:255',
+            'delivery_charge' => 'nullable|numeric|min:0',
+            'order_notes' => 'nullable|string|max:1000',
         ]);
 
-        $order->update($validated);
-
-        if ($request->filled('delivery_status')) {
-            $status = $validated['delivery_status'];
-            $templateKey = match ($status) {
-                'Confirmed' => 'wa_confirm_template',
-                'Delivered' => 'wa_delivery_template',
-                'Completed' => 'wa_completed_template',
-                'Cancelled' => 'wa_cancelled_template',
-                default => null,
-            };
-
-            if ($templateKey) {
-                SendWhatsAppOrderNotification::dispatch($order->id, $templateKey);
-            }
-
-            if (in_array($status, ['Delivered', 'Completed']) && $order->payment_slip) {
-                Storage::disk('public')->delete($order->payment_slip);
-                $order->update(['payment_slip' => null]);
-            }
+        if (array_key_exists('additional_charge', $validated) || array_key_exists('delivery_charge', $validated)) {
+            $deliv = isset($validated['delivery_charge']) ? (float)$validated['delivery_charge'] : (float)$order->delivery_charge;
+            $add = isset($validated['additional_charge']) ? (float)$validated['additional_charge'] : (float)($order->additional_charge ?? 0);
+            $sub = (float)$order->sub_total;
+            $disc = (float)$order->discount_amount;
+            $validated['grand_total'] = max(0, $sub + $deliv + $add - $disc);
         }
 
-        return response()->json($order);
+        $order = $updateOrderStatusAction->execute($order, $validated, $request->user());
+
+        return response()->json($order->load(['items', 'statusHistories', 'user']));
+    }
+
+    public function downloadSlip(Order $order)
+    {
+        if (!$order->payment_slip) {
+            return response()->json(['message' => 'No payment slip attached.'], 404);
+        }
+
+        $disk = Storage::disk('public')->exists($order->payment_slip) ? 'public' : 'private';
+        if (!Storage::disk($disk)->exists($order->payment_slip)) {
+            return response()->json(['message' => 'Slip file not found.'], 404);
+        }
+
+        return Storage::disk($disk)->response($order->payment_slip);
     }
 }
