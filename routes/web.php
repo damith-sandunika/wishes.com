@@ -11,7 +11,7 @@ Route::get('/storage/{path}', function ($path) {
 
     // Fallback: search in common subdirectories if bare filename given
     if (!file_exists($filePath)) {
-        foreach (['sliders', 'categories', 'products', 'slips'] as $sub) {
+        foreach (['sliders', 'categories', 'products', 'slips', 'free-items', 'addons', 'addons/options'] as $sub) {
             $candidate = public_path("storage/{$sub}/{$path}");
             if (file_exists($candidate) && !is_dir($candidate)) {
                 $filePath = $candidate;
@@ -39,7 +39,7 @@ Route::get('/storage/{path}', function ($path) {
 
 // 2. Direct fallback for bare image asset filenames requested at root
 Route::get('/{filename}', function ($filename) {
-    foreach (['', 'sliders/', 'categories/', 'products/', 'slips/'] as $sub) {
+    foreach (['', 'sliders/', 'categories/', 'products/', 'slips/', 'free-items/', 'addons/', 'addons/options/'] as $sub) {
         $candidate = public_path("storage/{$sub}{$filename}");
         if (file_exists($candidate) && !is_dir($candidate)) {
             $mime = mime_content_type($candidate) ?: 'image/png';
@@ -52,6 +52,11 @@ Route::get('/{filename}', function ($filename) {
     }
     abort(404);
 })->where('filename', '^[a-zA-Z0-9_\-\.]+\.(png|jpg|jpeg|gif|webp|svg|ico)$');
+
+// Named route for login to satisfy Sanctum/Auth redirection
+Route::get('/admin/login', function () {
+    return view('app');
+})->name('login');
 
 // 3. Catch-all route to serve the React SPA
 Route::get('/{any}', function () {

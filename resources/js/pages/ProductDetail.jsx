@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import ProductImageGallery from '../components/product/ProductImageGallery';
 import ProductOptions from '../components/product/ProductOptions';
 import ProductAddons from '../components/product/ProductAddons';
+import PersonalizationModal from '../components/product/PersonalizationModal';
 import ProductReviews from '../components/product/ProductReviews';
 import ProductCard from '../components/ProductCard';
 import { formatProduct } from '../components/product/productHelpers';
@@ -19,7 +20,10 @@ export default function ProductDetail() {
     const [loading, setLoading] = useState(true);
     const [addedToCart, setAddedToCart] = useState(false);
     const [addons, setAddons] = useState([]);
+    const [dbAddons, setDbAddons] = useState([]);
     const [selectedColorImg, setSelectedColorImg] = useState(null);
+    const [showPersonalizeModal, setShowPersonalizeModal] = useState(false);
+    const [pendingOpts, setPendingOpts] = useState(null);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -43,6 +47,10 @@ export default function ProductDetail() {
             })
             .catch(() => setProduct(null))
             .finally(() => setLoading(false));
+
+        axios.get('/api/public/addons')
+            .then(res => setDbAddons(Array.isArray(res.data) ? res.data : []))
+            .catch(() => {});
     }, [id]);
 
     const allGalleryImages = useMemo(() => {
@@ -54,22 +62,58 @@ export default function ProductDetail() {
         return Array.from(new Set([...base, ...colorImgs]));
     }, [product]);
 
-    const handleAddToCart = (opts) => {
+    const personalizedItems = useMemo(() => {
+        if (!product?.allowedAddons || !Array.isArray(product.allowedAddons)) return [];
+        return product.allowedAddons.map(item => {
+            const itemId = typeof item === 'object' && item !== null ? item.id : item;
+            const dbMatch = dbAddons.find(d => d.id === itemId || d.name === item);
+            const type = item?.type || dbMatch?.type || 'addon';
+            if (type !== 'personalization') return null;
+
+            const basePrice = item.custom_price !== null && item.custom_price !== undefined
+                ? Number(item.custom_price)
+                : Number(item?.price || dbMatch?.price || 0);
+
+            return {
+                id: itemId,
+                name: item?.name || dbMatch?.name || 'Customized Item',
+                price: basePrice,
+                image: item?.image || dbMatch?.image || '',
+                icon: item?.icon || dbMatch?.icon || '✨',
+                type: 'personalization',
+                description: item?.description || dbMatch?.description || '',
+                options: Array.isArray(dbMatch?.options) ? dbMatch.options : (Array.isArray(item?.options) ? item.options : []),
+                custom_fields: Array.isArray(dbMatch?.custom_fields) ? dbMatch.custom_fields : (Array.isArray(item?.custom_fields) ? item.custom_fields : []),
+            };
+        }).filter(Boolean);
+    }, [product?.allowedAddons, dbAddons]);
+
+    const proceedAddToCart = (opts, personalizedChoices = []) => {
         if (!product || !addToCart) return;
         const qty = opts?.qty || 1;
-        const addonTotal = addons.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
-        const addonNames = addons.map(a => (a.selected_option?.name ? `${a.name} (${a.selected_option.name})` : a.name)).join(', ');
+        const allChosen = [...addons, ...personalizedChoices];
+        const addonTotal = allChosen.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+        const addonNames = allChosen.map(a => (a.selected_option?.name ? `${a.name} (${a.selected_option.name})` : a.name)).join(', ');
 
         addToCart({
             ...product,
             ...opts,
             price: product.price + addonTotal,
             addonsSummary: addonNames || null,
-            selectedAddons: addons,
+            selectedAddons: allChosen,
         }, qty);
 
         setAddedToCart(true);
         setTimeout(() => setAddedToCart(false), 2000);
+    };
+
+    const handleAddToCartClick = (opts) => {
+        if (personalizedItems.length > 0) {
+            setPendingOpts(opts);
+            setShowPersonalizeModal(true);
+        } else {
+            proceedAddToCart(opts, []);
+        }
     };
 
     if (loading) {
@@ -129,7 +173,7 @@ export default function ProductDetail() {
                         <div className="w-full md:w-7/12">
                             <ProductOptions
                                 product={product}
-                                onAddToCart={handleAddToCart}
+                                onAddToCart={handleAddToCartClick}
                                 addedToCart={addedToCart}
                                 onColorSelect={(color) => { if (color?.image) setSelectedColorImg(color.image); }}
                             />
@@ -151,6 +195,16 @@ export default function ProductDetail() {
                     </section>
                 )}
             </main>
+
+            <PersonalizationModal
+                isOpen={showPersonalizeModal}
+                onClose={() => setShowPersonalizeModal(false)}
+                personalizedItems={personalizedItems}
+                onConfirm={(selectedChoices) => {
+                    setShowPersonalizeModal(false);
+                    proceedAddToCart(pendingOpts, selectedChoices);
+                }}
+            />
 
             <Footer />
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gift, Check, ChevronDown } from 'lucide-react';
+import { Gift, Check } from 'lucide-react';
 import axios from 'axios';
 
 export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
@@ -15,8 +15,8 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
     }, []);
 
     const available = useMemo(() => {
-        if (Array.isArray(allowedAddons) && allowedAddons.length > 0) {
-            return allowedAddons.map(item => {
+        const raw = (Array.isArray(allowedAddons) && allowedAddons.length > 0)
+            ? allowedAddons.map(item => {
                 const id = typeof item === 'object' && item !== null ? item.id : item;
                 const dbMatch = dbAddons.find(d => d.id === id || d.name === item);
                 if (!dbMatch && typeof item !== 'object') return null;
@@ -36,14 +36,16 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
                     options: Array.isArray(dbMatch?.options) ? dbMatch.options : (Array.isArray(item?.options) ? item.options : []),
                     custom_fields: Array.isArray(dbMatch?.custom_fields) ? dbMatch.custom_fields : (Array.isArray(item?.custom_fields) ? item.custom_fields : []),
                 };
-            }).filter(Boolean);
-        }
-        return dbAddons.map(d => ({
-            ...d,
-            price: Number(d.price || 0),
-            options: Array.isArray(d.options) ? d.options : [],
-            custom_fields: Array.isArray(d.custom_fields) ? d.custom_fields : [],
-        }));
+            }).filter(Boolean)
+            : dbAddons.map(d => ({
+                ...d,
+                price: Number(d.price || 0),
+                options: Array.isArray(d.options) ? d.options : [],
+                custom_fields: Array.isArray(d.custom_fields) ? d.custom_fields : [],
+            }));
+
+        // Strictly show only non-personalized Addons in this inline section
+        return raw.filter(a => (a.type || 'addon') !== 'personalization');
     }, [allowedAddons, dbAddons]);
 
     const notifyChange = (nextSelected, nextOptions, nextInputs) => {
@@ -80,10 +82,7 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
     };
 
     const handleInputChange = (addonId, label, val) => {
-        const nextInputs = {
-            ...inputs,
-            [addonId]: { ...(inputs[addonId] || {}), [label]: val }
-        };
+        const nextInputs = { ...inputs, [addonId]: { ...(inputs[addonId] || {}), [label]: val } };
         setInputs(nextInputs);
         notifyChange(selected, chosenOptions, nextInputs);
     };
@@ -91,16 +90,16 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
     if (available.length === 0) return null;
 
     return (
-        <div className="bg-rose-50/40 rounded-2xl p-4 border border-rose-100/80 my-5 shadow-2xs space-y-3">
+        <div className="bg-blue-50/40 rounded-2xl p-4 border border-blue-100/90 my-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-[#c8102e]/10 text-[#c8102e]"><Gift size={16} /></span>
+                    <span className="p-1 rounded-lg bg-blue-600/10 text-blue-700"><Gift size={16} /></span>
                     <div>
-                        <h4 className="font-bold text-slate-900 text-xs tracking-tight">Add-ons &amp; Customized Items</h4>
-                        <p className="text-[10px] text-slate-500">Custom wrapping, cards, and personalized keepsakes</p>
+                        <h4 className="font-bold text-slate-900 text-xs tracking-tight">Available Add-ons</h4>
+                        <p className="text-[10px] text-slate-500">Chocolates, plushies, candles &amp; signature ribbons</p>
                     </div>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optional</span>
+                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-100/70 px-2 py-0.5 rounded-full">Optional</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -111,7 +110,7 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
                     const activeThumb = currentOpt?.image || addon.options?.[0]?.image || addon.image;
 
                     return (
-                        <div key={addon.id} className={`rounded-xl border transition-all ${isChecked ? 'bg-white border-[#c8102e] shadow-xs ring-1 ring-[#c8102e]/20' : 'bg-white/90 border-slate-200 hover:border-rose-300'}`}>
+                        <div key={addon.id} className={`rounded-xl border transition-all ${isChecked ? 'bg-white border-blue-600 shadow-xs ring-1 ring-blue-600/20' : 'bg-white/90 border-slate-200 hover:border-blue-300'}`}>
                             <div onClick={() => toggle(addon)} className="flex items-center justify-between p-2.5 cursor-pointer">
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                     <div className="w-11 h-11 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200/70 flex items-center justify-center">
@@ -119,29 +118,27 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-bold text-slate-800 truncate leading-tight">{addon.name}</p>
-                                        <p className="text-[11px] text-[#c8102e] font-extrabold mt-0.5">
+                                        <p className="text-[11px] text-blue-700 font-extrabold mt-0.5">
                                             {Number(displayPrice) > 0 ? `+ Rs. ${Number(displayPrice).toLocaleString()}` : 'Free'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className={`w-5 h-5 ml-2 rounded-md flex items-center justify-center border shrink-0 ${isChecked ? 'bg-[#c8102e] border-[#c8102e] text-white shadow-2xs' : 'border-slate-300 bg-white'}`}>
+                                <div className={`w-5 h-5 ml-2 rounded-md flex items-center justify-center border shrink-0 ${isChecked ? 'bg-blue-600 border-blue-600 text-white shadow-2xs' : 'border-slate-300 bg-white'}`}>
                                     {isChecked && <Check size={12} strokeWidth={3} />}
                                 </div>
                             </div>
 
-                            {/* Sub-Options & Custom Field Inputs when Selected */}
                             {isChecked && (addon.options?.length > 0 || addon.custom_fields?.length > 0) && (
-                                <div className="p-3 pt-2 border-t border-rose-100 bg-rose-50/30 space-y-2.5 text-xs">
-                                    {/* Style / Pattern Sub-options */}
+                                <div className="p-3 pt-2 border-t border-blue-100 bg-blue-50/30 space-y-2.5 text-xs">
                                     {addon.options?.length > 0 && (
                                         <div>
-                                            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Select Style / Option:</label>
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Select Option:</label>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {addon.options.map((opt, i) => {
                                                     const isOptActive = (currentOpt?.name === opt.name) || (!chosenOptions[addon.id] && i === 0);
                                                     return (
                                                         <button key={i} type="button" onClick={() => handleOptionSelect(addon.id, opt)}
-                                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition flex items-center gap-1.5 ${isOptActive ? 'bg-[#c8102e] text-white border-[#c8102e] shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'}`}>
+                                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition flex items-center gap-1.5 ${isOptActive ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'}`}>
                                                             {opt.image && <img src={opt.image} alt={opt.name} className="w-4 h-4 rounded-sm object-cover border border-white/50" />}
                                                             <span>{opt.name}</span>
                                                             {opt.price ? <span className="opacity-80 font-normal">({Number(opt.price) > 0 ? `+Rs. ${Number(opt.price).toLocaleString()}` : 'Free'})</span> : null}
@@ -152,25 +149,18 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
                                         </div>
                                     )}
 
-                                    {/* Custom Required Fields (Name, Age, Wish) */}
                                     {addon.custom_fields?.map((fld, idx) => (
                                         <div key={idx}>
                                             <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
                                                 {fld.label} {fld.required && <span className="text-red-500">*</span>}
                                             </label>
-                                            {fld.type === 'textarea' ? (
-                                                <textarea rows={2} required={fld.required} placeholder={fld.placeholder || ''}
-                                                    value={inputs[addon.id]?.[fld.label] || ''} onChange={e => handleInputChange(addon.id, fld.label, e.target.value)}
-                                                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-blue-500 resize-none" />
-                                            ) : fld.type === 'file' ? (
-                                                <input type="file" accept="image/*" required={fld.required}
-                                                    onChange={e => handleInputChange(addon.id, fld.label, e.target.files?.[0]?.name || '')}
-                                                    className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 bg-white file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-rose-50 file:text-rose-700" />
-                                            ) : (
-                                                <input type={fld.type === 'number' ? 'number' : 'text'} required={fld.required} placeholder={fld.placeholder || ''}
-                                                    value={inputs[addon.id]?.[fld.label] || ''} onChange={e => handleInputChange(addon.id, fld.label, e.target.value)}
-                                                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-blue-500" />
-                                            )}
+                                            <input
+                                                type={fld.type === 'number' ? 'number' : 'text'}
+                                                value={inputs[addon.id]?.[fld.label] || ''}
+                                                onChange={e => handleInputChange(addon.id, fld.label, e.target.value)}
+                                                placeholder={fld.placeholder || `Enter ${fld.label}`}
+                                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-blue-500"
+                                            />
                                         </div>
                                     ))}
                                 </div>

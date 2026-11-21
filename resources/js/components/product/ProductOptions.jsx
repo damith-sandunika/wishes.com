@@ -7,9 +7,9 @@ const TIME_SLOTS = ['10:00 AM – 1:00 PM', '1:00 PM – 4:00 PM', '4:00 PM – 
 
 export default function ProductOptions({ product = {}, onAddToCart, addedToCart, onColorSelect }) {
   const { settings } = useSettings();
-  const { 
-    name, price = 0, oldPrice, discount = 0, description, rating = 0, reviewsCount = 0, 
-    enablePersonalization, enableWrapping = true, colorVariations = [] 
+  const {
+    name, price = 0, oldPrice, discount = 0, description, rating = 0, reviewsCount = 0,
+    enablePersonalization, enableWrapping = true, colorVariations = []
   } = product;
 
   const wrappingList = useMemo(() => {
@@ -19,7 +19,7 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
         const parsed = typeof settings.gift_wrapping_options === 'string'
           ? JSON.parse(settings.gift_wrapping_options) : settings.gift_wrapping_options;
         if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(w => w.active !== false);
-      } catch {}
+      } catch { }
     }
     return [];
   }, [settings?.gift_wrapping_options, enableWrapping]);
@@ -52,12 +52,12 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
     }
     setColorError(false);
     if (onAddToCart) {
-      onAddToCart({ 
-        qty, 
-        wrapping: selectedWrap?.name || null, 
-        mugText: enablePersonalization ? mugText : '', 
-        cardMsg: enablePersonalization ? cardMsg : '', 
-        deliveryDate, 
+      onAddToCart({
+        qty,
+        wrapping: selectedWrap?.name || null,
+        mugText: enablePersonalization ? mugText : '',
+        cardMsg: enablePersonalization ? cardMsg : '',
+        deliveryDate,
         deliveryTime,
         color: selectedColor?.name || null,
         extraPrice: colorCharge + wrapCharge
@@ -67,8 +67,20 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-slate-900 leading-tight">{name}</h1>
+      {/* Product Title Header with Wishlist Button on Top Right */}
+      <div className="flex items-start justify-between gap-3">
+        <h1 className="text-2xl font-bold text-slate-900 leading-tight flex-1">{name}</h1>
+        <button
+          type="button"
+          onClick={() => setWishlisted(!wishlisted)}
+          className="p-2.5 rounded-full border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-300 transition-all shadow-2xs shrink-0"
+          title="Add to Wishlist"
+        >
+          <Heart size={18} className={wishlisted ? 'text-[#c8102e] fill-[#c8102e]' : 'text-slate-400'} />
+        </button>
+      </div>
 
+      {/* Reviews */}
       <div className="flex items-center gap-2">
         {reviewsCount > 0 ? (
           <>
@@ -84,10 +96,23 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
         )}
       </div>
 
-      <div className="flex items-baseline gap-3">
-        <span className="text-3xl font-extrabold text-[#c8102e]">Rs. {currentPrice?.toLocaleString()}</span>
-        {oldPrice && <span className="text-sm text-slate-400 line-through">Rs. {(oldPrice + colorCharge + wrapCharge).toLocaleString()}</span>}
-        {discount > 0 && <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">{discount}% OFF</span>}
+      {/* Price Section: Mobile 3-Lines (Discount Badge -> Current Price -> Old Price) */}
+      <div className="flex flex-col gap-1">
+        {discount > 0 && (
+          <div>
+            <span className="inline-flex items-center bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
+              {discount}% OFF
+            </span>
+          </div>
+        )}
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+          <span className="text-3xl font-extrabold text-[#c8102e]">Rs. {currentPrice?.toLocaleString()}</span>
+          {oldPrice && (
+            <span className="text-sm text-slate-400 line-through mt-0.5 sm:mt-0">
+              Rs. {(oldPrice + colorCharge + wrapCharge).toLocaleString()}
+            </span>
+          )}
+        </div>
       </div>
 
       {description && <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{description}</p>}
@@ -155,14 +180,15 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Delivery Date & Time: Stacked on Separate Lines */}
+      <div className="space-y-3 pt-1">
         <div>
           <label className="text-xs font-semibold text-slate-700 block mb-1">Preferred Delivery Date</label>
           <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8102e]" />
+            min={new Date().toISOString().split('T')[0]} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8102e] bg-white" />
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-700 block mb-1">Time Slot</label>
+          <label className="text-xs font-semibold text-slate-700 block mb-1">Preferred Time Slot</label>
           <select value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c8102e] bg-white">
             {TIME_SLOTS.map(t => <option key={t}>{t}</option>)}
@@ -170,18 +196,16 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
         </div>
       </div>
 
+      {/* Add to Cart Button (Full Prominence, Wishlist removed from here) */}
       <div className="flex items-center gap-3 pt-2">
-        <div className="flex items-center border border-slate-200 rounded-xl bg-white">
-          <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3 py-2 text-sm text-slate-600 hover:text-black font-bold">-</button>
-          <span className="px-2 text-sm font-bold text-slate-800">{qty}</span>
-          <button type="button" onClick={() => setQty(q => q + 1)} className="px-3 py-2 text-sm text-slate-600 hover:text-black font-bold">+</button>
+        <div className="flex items-center border border-slate-200 rounded-xl bg-white shadow-2xs">
+          <button type="button" onClick={() => setQty(q => Math.max(1, q - 1))} className="px-3.5 py-2.5 text-sm text-slate-600 hover:text-black font-bold">-</button>
+          <span className="px-2.5 text-sm font-bold text-slate-800">{qty}</span>
+          <button type="button" onClick={() => setQty(q => q + 1)} className="px-3.5 py-2.5 text-sm text-slate-600 hover:text-black font-bold">+</button>
         </div>
         <button type="button" onClick={handleAddToCart}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all ${addedToCart ? 'bg-emerald-600 text-white' : 'bg-[#c8102e] hover:bg-red-800 text-white'}`}>
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95 ${addedToCart ? 'bg-emerald-600 text-white' : 'bg-[#c8102e] hover:bg-red-800 text-white shadow-red-500/20'}`}>
           {addedToCart ? <><Check size={16} /> Added to Cart!</> : <><ShoppingCart size={16} /> Add to Cart</>}
-        </button>
-        <button type="button" onClick={() => setWishlisted(!wishlisted)} className="p-3 border border-slate-200 rounded-xl hover:border-rose-300 transition-colors">
-          <Heart size={18} className={wishlisted ? 'text-[#c8102e] fill-[#c8102e]' : 'text-slate-400'} />
         </button>
       </div>
     </div>
