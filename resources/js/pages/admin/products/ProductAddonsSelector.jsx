@@ -87,8 +87,8 @@ export default function ProductAddonsSelector({ form, setForm }) {
                                 />
 
                                 <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
-                                    {addon.image ? (
-                                        <img src={addon.image} alt={addon.name} className="w-full h-full object-cover" />
+                                    {(addon.image || addon.options?.[0]?.image) ? (
+                                        <img src={addon.image || addon.options?.[0]?.image} alt={addon.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <span className="text-xl">{addon.icon || '🎁'}</span>
                                     )}
@@ -102,6 +102,11 @@ export default function ProductAddonsSelector({ form, setForm }) {
                                         }`}>
                                             {addon.type === 'personalization' ? 'Personalize' : 'Addon'}
                                         </span>
+                                        {Array.isArray(addon.options) && addon.options.length > 0 && (
+                                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                                                {addon.options.length} style{addon.options.length > 1 ? 's' : ''}
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{addon.description || 'No description'}</p>
                                     <p className="text-[11px] font-semibold text-slate-600 mt-1">

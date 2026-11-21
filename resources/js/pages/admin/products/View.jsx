@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../layouts/AdminLayout';
 import AdminStatusBadge from '../../../components/admin/AdminStatusBadge';
 import axios from 'axios';
-import { ArrowLeft, Pencil, Package, Gift, Sparkles, Tag, Palette } from 'lucide-react';
+import { Pencil, Package, Gift, Sparkles, Tag, Palette } from 'lucide-react';
 
 const getImgUrl = (img) => {
     if (!img) return '';
@@ -56,14 +56,9 @@ export default function ProductView() {
             pageTitle={product.name}
             pageSubtitle={`SKU: ${product.sku || 'None'} • Category: ${product.category?.name || 'Uncategorized'}`}
             headerActions={
-                <div className="flex items-center gap-2">
-                    <Link to="/admin/products" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs">
-                        <ArrowLeft size={14} /> Catalog
-                    </Link>
-                    <Link to={`/admin/products/${product.id}/edit`} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold shadow-sm shadow-blue-500/20">
-                        <Pencil size={13} /> Edit Item
-                    </Link>
-                </div>
+                <Link to={`/admin/products/${product.id}/edit`} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold shadow-sm shadow-blue-500/20">
+                    <Pencil size={13} /> Edit Item
+                </Link>
             }
         >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -117,7 +112,7 @@ export default function ProductView() {
                             <strong className={product.enable_wrapping ? 'text-emerald-700' : 'text-slate-400'}>{product.enable_wrapping ? 'Enabled' : 'Disabled'}</strong>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50/75 border border-slate-100">
-                            <span className="flex items-center gap-2 font-semibold text-slate-700"><Sparkles size={15} className="text-blue-600" /> Personalization</span>
+                            <span className="flex items-center gap-2 font-semibold text-slate-700"><Sparkles size={15} className="text-blue-600" /> Customization</span>
                             <strong className={product.enable_personalization ? 'text-blue-700' : 'text-slate-400'}>{product.enable_personalization ? 'Enabled' : 'Disabled'}</strong>
                         </div>
                     </div>

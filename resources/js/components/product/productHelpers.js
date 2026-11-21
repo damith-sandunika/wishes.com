@@ -30,8 +30,15 @@ export const formatProduct = (p) => {
         description: p.description || p.short_description || '',
         enablePersonalization: Boolean(p.enable_personalization),
         enableWrapping: Boolean(p.enable_wrapping),
-        colorVariations: Array.isArray(p.color_variations) ? p.color_variations : [],
+        colorVariations: (Array.isArray(p.color_variations) ? p.color_variations : []).map(c => ({
+            ...c,
+            image: c?.image ? (c.image.startsWith('http') ? c.image : `/storage/${c.image.replace(/^\/?(storage\/)?/, '')}`) : ''
+        })),
         allowedAddons: Array.isArray(p.allowed_addons) ? p.allowed_addons : [],
+        freeItems: (Array.isArray(p.free_items) ? p.free_items : []).map(fi => ({
+            ...fi,
+            image: fi?.image ? (fi.image.startsWith('http') ? fi.image : `/storage/${fi.image.replace(/^\/?(storage\/)?/, '')}`) : ''
+        })),
         reviews: reviews,
         reviewsCount: reviewsCount,
         rating: rating,

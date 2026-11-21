@@ -32,6 +32,8 @@ export default function Home() {
                     return {
                         id: p.id,
                         name: p.name,
+                        short_description: p.short_description || '',
+                        categoryName: p.category?.name || '',
                         price: p.discount_price || p.selling_price,
                         oldPrice: p.discount_price ? p.selling_price : null,
                         image: p.images?.length > 0
@@ -42,6 +44,7 @@ export default function Home() {
                             : 0,
                         rating: avg,
                         reviewsCount: count,
+                        free_items: p.free_items || [],
                         isBestseller: i < 4 || p.is_featured,
                     };
                 });
@@ -93,11 +96,9 @@ export default function Home() {
 
             {/* Trust Badges / Features */}
             <ScrollReveal>
-                <section className="bg-rose-50/50 py-10 my-4 border-y border-rose-100/60">
-                    <div className="max-w-7xl mx-auto px-4 lg:px-6">
-                        <Features />
-                    </div>
-                </section>
+                <div className="my-3 sm:my-5">
+                    <Features />
+                </div>
             </ScrollReveal>
 
             {/* Separate Section 3: Special Offers */}

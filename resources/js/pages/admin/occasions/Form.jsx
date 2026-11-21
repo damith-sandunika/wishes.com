@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import AdminLayout from '../../../layouts/AdminLayout';
 import {
-    ArrowLeft, Save, Upload, Cake, Heart, Sparkles, Trophy,
+    Save, Upload, Cake, Heart, Sparkles, Trophy,
     Briefcase, Smile, Gift, Calendar, GraduationCap, Baby,
     Gem, Flower2, Crown, Wine, Coffee, Flame, PartyPopper
 } from 'lucide-react';
@@ -97,22 +97,17 @@ export default function OccasionForm() {
 
     return (
         <AdminLayout
-            pageTitle={isEdit ? `Edit: ${form.title}` : 'Add New Occasion'}
-            pageSubtitle="Configure festive event theme, background photography, and event icon."
-            headerActions={
-                <Link to="/admin/occasions" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs">
-                    <ArrowLeft size={14} /> Back to Occasions
-                </Link>
-            }
+            pageTitle={isEdit ? `Edit: ${form.title}` : 'Add New Special Day'}
+            pageSubtitle="Configure special day celebration theme, background photography, and event icon."
         >
-            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
+            <form onSubmit={handleSubmit} className="w-full space-y-6">
                 {error && <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-semibold">{error}</div>}
 
                 <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-5">
-                    <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">Event Information</h3>
+                    <h3 className="font-bold text-slate-900 text-sm border-b border-slate-100 pb-2">Special Day Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">Occasion Title *</label>
+                            <label className="text-[11px] font-bold text-slate-700 uppercase block mb-1">Special Day Title *</label>
                             <input type="text" required value={form.title}
                                 onChange={e => setForm({ ...form, title: e.target.value, slug: form.slug ? form.slug : e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') })}
                                 placeholder="e.g. Birthday Celebrations" className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 bg-slate-50/50" />
@@ -182,7 +177,7 @@ export default function OccasionForm() {
                     </label>
                     <button type="submit" disabled={saving}
                         className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center gap-2">
-                        <Save size={15} /> {saving ? 'Saving...' : (isEdit ? 'Update Occasion' : 'Create Occasion')}
+                        <Save size={15} /> {saving ? 'Saving...' : (isEdit ? 'Update Special Day' : 'Create Special Day')}
                     </button>
                 </div>
             </form>

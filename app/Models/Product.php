@@ -42,6 +42,7 @@ class Product extends Model
         'enable_personalization',
         'enable_wrapping',
         'allowed_addons',
+        'free_items',
         'occasions',
     ];
 
@@ -49,6 +50,7 @@ class Product extends Model
         'images' => 'array',
         'color_variations' => 'array',
         'allowed_addons' => 'array',
+        'free_items' => 'array',
         'occasions' => 'array',
         'enable_personalization' => 'boolean',
         'enable_wrapping' => 'boolean',

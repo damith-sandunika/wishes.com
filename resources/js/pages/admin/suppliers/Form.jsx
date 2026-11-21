@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../../layouts/AdminLayout';
 import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 const EMPTY = { name: '', company: '', phone: '', whatsapp_number: '', email: '', address: '', city: '', notes: '', status: 1 };
 
@@ -64,13 +64,8 @@ export default function SupplierForm() {
         <AdminLayout
             pageTitle={isEdit ? 'Edit Supplier' : 'Add Supplier'}
             pageSubtitle="Save vendor profile and contact information"
-            headerActions={
-                <Link to="/admin/suppliers" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100 transition border border-slate-200">
-                    <ArrowLeft size={14} /> Back
-                </Link>
-            }
         >
-            <div className="max-w-4xl mx-auto">
+            <div className="w-full">
 
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <form onSubmit={save} className="p-6 space-y-6">

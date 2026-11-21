@@ -10,7 +10,7 @@ import FlashSaleBanner from './header/FlashSaleBanner';
 
 const PRIMARY_NAV = [
     { label: 'Home', to: '/' },
-    { label: 'Gifts by Occasion', to: '/occasion' },
+    { label: 'Special Days', to: '/occasions' },
 ];
 
 export default function Header() {

@@ -68,22 +68,22 @@ export default function AdminOrders() {
             pageTitle="Orders Logistics"
             pageSubtitle="Track floral and gift deliveries, manage invoice printing, and verify payments."
             headerActions={
-                <div className="flex items-center gap-2">
-                    <div className="relative">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
                         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             placeholder="Search invoice, customer, phone..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-blue-500 shadow-2xs w-64"
+                            className="pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-blue-500 shadow-2xs w-full"
                         />
                     </div>
                 </div>
             }
         >
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="flex items-center gap-1.5 p-2 border-b border-slate-100 overflow-x-auto bg-slate-50/50">
+                <div className="flex items-center gap-1.5 p-2 border-b border-slate-100 overflow-x-auto scrollbar-hide bg-slate-50/50">
                     {TABS.map(tab => {
                         const count = tab === 'All' ? orderList.length : tab === 'Received'
                             ? orderList.filter(o => o.delivery_status === 'Pending' || o.delivery_status === 'Received').length

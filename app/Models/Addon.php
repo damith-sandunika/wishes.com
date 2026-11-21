@@ -17,6 +17,8 @@ class Addon extends Model
         'price',
         'is_price_editable',
         'type',
+        'options',
+        'custom_fields',
         'image',
         'icon',
         'is_active',
@@ -28,5 +30,7 @@ class Addon extends Model
         'is_price_editable' => 'boolean',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'options' => 'array',
+        'custom_fields' => 'array',
     ];
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import AdminLayout from '../../../layouts/AdminLayout';
-import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
+import { Printer, RefreshCw } from 'lucide-react';
 import { printInvoice } from '../../../utils/printInvoice';
 import OrderItemsCard from './OrderItemsCard';
 import OrderDetailsCard from './OrderDetailsCard';
@@ -72,15 +72,10 @@ export default function OrderView() {
             pageTitle={`Order #${order.invoice_number || order.id}`}
             pageSubtitle={`Tracking: ${order.tracking_number || 'N/A'} • Placed on ${new Date(order.created_at).toLocaleString()}`}
             headerActions={
-                <div className="flex items-center gap-2">
-                    <Link to="/admin/orders" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs">
-                        <ArrowLeft size={14} /> Back to Orders
-                    </Link>
-                    <button onClick={() => printInvoice(order)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold shadow-sm shadow-blue-500/20">
-                        <Printer size={13} /> Print Invoice
-                    </button>
-                </div>
+                <button onClick={() => printInvoice(order)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold shadow-sm shadow-blue-500/20">
+                    <Printer size={13} /> Print Invoice
+                </button>
             }
         >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

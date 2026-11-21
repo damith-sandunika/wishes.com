@@ -78,12 +78,12 @@ export default function Occasions() {
 
             <main className="flex-1">
                 <PageHero
-                    title="Shop by Occasion"
-                    subtitle="Whether celebrating birthdays, anniversaries or corporate wins, discover the perfect gift tailored for every occasion."
+                    title="Special Days &amp; Celebrations"
+                    subtitle="Whether celebrating birthdays, anniversaries or corporate wins, discover the perfect gift tailored for every special day."
                     badge="Gifts For Every Milestone"
                     breadcrumbs={[
                         { label: 'Home', to: '/' },
-                        { label: 'Occasions' }
+                        { label: 'Special Days' }
                     ]}
                 />
 

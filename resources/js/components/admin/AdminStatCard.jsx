@@ -12,19 +12,20 @@ export default function AdminStatCard({ label, value, icon: Icon, color = 'blue'
     };
 
     return (
-        <div className="p-4 md:p-5 flex items-center gap-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-            <div className={`w-11 h-11 rounded-xl ${colorMap[color] || colorMap.blue} flex items-center justify-center border shrink-0`}>
-                <Icon size={20} />
+        <div className="p-3 sm:p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-shadow">
+            <div className={`w-8.5 h-8.5 sm:w-11 sm:h-11 rounded-xl ${colorMap[color] || colorMap.blue} flex items-center justify-center border shrink-0`}>
+                <Icon size={17} className="sm:hidden" />
+                <Icon size={20} className="hidden sm:block" />
             </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider leading-none mb-1.5 truncate">
+            <div className="min-w-0 flex-1 w-full">
+                <p className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider leading-none mb-1 truncate">
                     {label}
                 </p>
-                <h4 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-none truncate">
+                <h4 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight truncate">
                     {value}
                 </h4>
                 {subtext && (
-                    <p className="text-[11px] text-slate-400 font-medium mt-1 truncate">
+                    <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5 sm:mt-1 truncate">
                         {subtext}
                     </p>
                 )}

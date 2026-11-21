@@ -18,8 +18,19 @@ import CategoryForm from './pages/admin/categories/Form';
 import OccasionIndex from './pages/admin/occasions/Index';
 import OccasionForm from './pages/admin/occasions/Form';
 import AddonIndex from './pages/admin/addons/Index';
+import AddonForm from './pages/admin/addons/Form';
+import PersonalizationIndex from './pages/admin/personalizations/Index';
+import FreeItemIndex from './pages/admin/free-items/Index';
+import FreeItemForm from './pages/admin/free-items/Form';
+import DeliveryZonesIndex from './pages/admin/delivery/Index';
+import DeliveryZoneForm from './pages/admin/delivery/Form';
 import AdminCustomers from './pages/admin/Customers';
 import AdminSettings from './pages/admin/Settings';
+import FAQSettings from './pages/admin/settings/FAQSettings';
+import PrivacyPolicySettings from './pages/admin/settings/PrivacyPolicySettings';
+import DeliveryPolicySettings from './pages/admin/settings/DeliveryPolicySettings';
+import TermsSettings from './pages/admin/settings/TermsSettings';
+import ReturnsSettings from './pages/admin/settings/ReturnsSettings';
 import AdminInventory from './pages/admin/Inventory';
 import CouponIndex from './pages/admin/coupons/Index';
 import SupplierIndex from './pages/admin/suppliers/Index';
@@ -98,7 +109,18 @@ if (container) {
                         <Route path="/admin/occasions" element={<ProtectedRoute><OccasionIndex /></ProtectedRoute>} />
                         <Route path="/admin/occasions/create" element={<ProtectedRoute><OccasionForm /></ProtectedRoute>} />
                         <Route path="/admin/occasions/:id/edit" element={<ProtectedRoute><OccasionForm /></ProtectedRoute>} />
+                        <Route path="/admin/delivery" element={<ProtectedRoute><DeliveryZonesIndex /></ProtectedRoute>} />
+                        <Route path="/admin/delivery/create" element={<ProtectedRoute><DeliveryZoneForm /></ProtectedRoute>} />
+                        <Route path="/admin/delivery/:id/edit" element={<ProtectedRoute><DeliveryZoneForm /></ProtectedRoute>} />
                         <Route path="/admin/addons" element={<ProtectedRoute><AddonIndex /></ProtectedRoute>} />
+                        <Route path="/admin/addons/create" element={<ProtectedRoute><AddonForm defaultType="addon" /></ProtectedRoute>} />
+                        <Route path="/admin/addons/:id/edit" element={<ProtectedRoute><AddonForm defaultType="addon" /></ProtectedRoute>} />
+                        <Route path="/admin/personalizations" element={<ProtectedRoute><PersonalizationIndex /></ProtectedRoute>} />
+                        <Route path="/admin/personalizations/create" element={<ProtectedRoute><AddonForm defaultType="personalization" /></ProtectedRoute>} />
+                        <Route path="/admin/personalizations/:id/edit" element={<ProtectedRoute><AddonForm defaultType="personalization" /></ProtectedRoute>} />
+                        <Route path="/admin/free-items" element={<ProtectedRoute><FreeItemIndex /></ProtectedRoute>} />
+                        <Route path="/admin/free-items/create" element={<ProtectedRoute><FreeItemForm /></ProtectedRoute>} />
+                        <Route path="/admin/free-items/:id/edit" element={<ProtectedRoute><FreeItemForm /></ProtectedRoute>} />
                         <Route path="/admin/categories/create" element={<ProtectedRoute><CategoryForm /></ProtectedRoute>} />
                         <Route path="/admin/categories/:id/edit" element={<ProtectedRoute><CategoryForm /></ProtectedRoute>} />
                         <Route path="/admin/sliders" element={<ProtectedRoute><AdminSliders /></ProtectedRoute>} />
@@ -108,6 +130,11 @@ if (container) {
                         <Route path="/admin/staff" element={<ProtectedRoute><StaffIndex /></ProtectedRoute>} />
                         <Route path="/admin/whatsapp-templates" element={<ProtectedRoute><WhatsAppTemplates /></ProtectedRoute>} />
                         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+                        <Route path="/admin/settings/faq" element={<ProtectedRoute><FAQSettings /></ProtectedRoute>} />
+                        <Route path="/admin/settings/privacy-policy" element={<ProtectedRoute><PrivacyPolicySettings /></ProtectedRoute>} />
+                        <Route path="/admin/settings/delivery-policy" element={<ProtectedRoute><DeliveryPolicySettings /></ProtectedRoute>} />
+                        <Route path="/admin/settings/terms" element={<ProtectedRoute><TermsSettings /></ProtectedRoute>} />
+                        <Route path="/admin/settings/returns-policy" element={<ProtectedRoute><ReturnsSettings /></ProtectedRoute>} />
                         <Route path="/admin/suppliers" element={<ProtectedRoute><SupplierIndex /></ProtectedRoute>} />
                         <Route path="/admin/suppliers/create" element={<ProtectedRoute><SupplierForm /></ProtectedRoute>} />
                         <Route path="/admin/suppliers/:id/edit" element={<ProtectedRoute><SupplierForm /></ProtectedRoute>} />

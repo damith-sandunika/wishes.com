@@ -61,16 +61,17 @@ class ProductController extends Controller
     {
         $validated = $this->validateProduct($request);
         $validated['slug'] = Str::slug($validated['name']) . '-' . Str::lower(Str::random(4));
+        if (empty($validated['sku'])) $validated['sku'] = 'WSH-' . strtoupper(Str::random(6));
         $validated['images'] = $this->processProductImages($request);
-        $validated['color_variations'] = $this->parseJsonField($request->color_variations);
+        $validated['color_variations'] = $this->processColors($request);
         $validated['allowed_addons'] = $this->parseJsonField($request->allowed_addons);
+        $validated['free_items'] = $this->parseJsonField($request->free_items);
         $validated['occasions'] = $this->parseJsonField($request->occasions);
         $validated['enable_personalization'] = $request->boolean('enable_personalization', false);
         $validated['enable_wrapping'] = $request->boolean('enable_wrapping', true);
 
         $product = Product::create($validated);
         Cache::forget('public_products_active');
-
         return response()->json($product->load(['category', 'reviews']), 201);
     }
 
@@ -85,10 +86,14 @@ class ProductController extends Controller
         if ($request->name !== $product->name) {
             $validated['slug'] = Str::slug($validated['name']) . '-' . Str::lower(Str::random(4));
         }
+        if (empty($validated['sku'])) {
+            $validated['sku'] = $product->sku ?: ('WSH-' . strtoupper(Str::random(6)));
+        }
 
         $validated['images'] = $this->processProductImages($request, $product->images ?? []);
-        if ($request->has('color_variations')) $validated['color_variations'] = $this->parseJsonField($request->color_variations);
+        if ($request->has('color_variations')) $validated['color_variations'] = $this->processColors($request);
         if ($request->has('allowed_addons')) $validated['allowed_addons'] = $this->parseJsonField($request->allowed_addons);
+        if ($request->has('free_items')) $validated['free_items'] = $this->parseJsonField($request->free_items);
         if ($request->has('occasions')) $validated['occasions'] = $this->parseJsonField($request->occasions);
         $validated['enable_personalization'] = $request->boolean('enable_personalization', false);
         $validated['enable_wrapping'] = $request->boolean('enable_wrapping', true);
@@ -146,7 +151,22 @@ class ProductController extends Controller
             'stock_availability' => 'nullable|boolean',
             'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'extra_images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
+            'color_image_*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
+    }
+
+    private function processColors(Request $request): ?array
+    {
+        $colors = $this->parseJsonField($request->color_variations);
+        if (!is_array($colors)) return null;
+        $opt = app(ImageOptimizerService::class);
+        $title = (string)$request->input('name', 'product');
+        foreach ($colors as $i => &$c) {
+            if ($request->hasFile("color_image_{$i}")) {
+                $c['image'] = $opt->optimizeAndStore($request->file("color_image_{$i}"), 'products/variants', "{$title}-c{$i}", 1000);
+            }
+        }
+        return $colors;
     }
 
     private function processProductImages(Request $request, array $existing = []): array

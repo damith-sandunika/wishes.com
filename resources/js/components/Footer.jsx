@@ -10,7 +10,7 @@ function useSettings() {
 const QUICK_LINKS = [
   { label: 'Home',             to: '/' },
   { label: 'Shop All Gifts',   to: '/shop' },
-  { label: 'Gift by Occasion', to: '/occasion' },
+  { label: 'Special Days',     to: '/occasions' },
   { label: 'About Us',         to: '/about' },
   { label: 'Contact Us',       to: '/contact' },
   { label: 'Track Order',      to: '/track-order' },

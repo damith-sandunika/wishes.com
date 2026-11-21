@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ShoppingCart, Check, Heart, Star } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
+import ProductFreeItemsBanner from './ProductFreeItemsBanner';
 
 const TIME_SLOTS = ['10:00 AM – 1:00 PM', '1:00 PM – 4:00 PM', '4:00 PM – 7:00 PM'];
 
@@ -23,7 +24,8 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
     return [];
   }, [settings?.gift_wrapping_options, enableWrapping]);
 
-  const [selectedColor, setSelectedColor] = useState(colorVariations[0] || null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [colorError, setColorError] = useState(false);
   const [selectedWrap, setSelectedWrap] = useState(wrappingList[0] || null);
   const [mugText, setMugText] = useState('');
   const [cardMsg, setCardMsg] = useState('');
@@ -39,10 +41,16 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
 
   const handleColorChange = (c) => {
     setSelectedColor(c);
+    setColorError(false);
     if (onColorSelect) onColorSelect(c);
   };
 
   const handleAddToCart = () => {
+    if (colorVariations.length > 0 && !selectedColor) {
+      setColorError(true);
+      return;
+    }
+    setColorError(false);
     if (onAddToCart) {
       onAddToCart({ 
         qty, 
@@ -85,22 +93,31 @@ export default function ProductOptions({ product = {}, onAddToCart, addedToCart,
       {description && <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{description}</p>}
 
       {colorVariations.length > 0 && (
-        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+        <div className={`p-3.5 rounded-xl border transition-all ${colorError ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-200' : 'bg-slate-50 border-slate-200'} space-y-2`}>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-700">Select Variation: <strong className="text-slate-900">{selectedColor?.name}</strong></span>
+            <span className="text-xs font-semibold text-slate-700">
+              Select Variation: {selectedColor ? <strong className="text-slate-900">{selectedColor.name}</strong> : <span className="text-rose-600 font-bold ml-1">* Required</span>}
+            </span>
             {selectedColor?.extra_price > 0 && <span className="text-xs text-[#c8102e] font-bold">+Rs. {selectedColor.extra_price.toLocaleString()}</span>}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {colorVariations.map((c, i) => (
               <button key={i} type="button" onClick={() => handleColorChange(c)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${selectedColor?.name === c.name ? 'border-[#c8102e] bg-white shadow-2xs ring-1 ring-[#c8102e]/30' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                <span className="w-3.5 h-3.5 rounded-full border border-black/10" style={{ backgroundColor: c.code }} />
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${selectedColor?.name === c.name ? 'border-[#c8102e] bg-white shadow-2xs ring-2 ring-[#c8102e]/40 font-bold' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                <span className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.code }} />
                 <span className="text-xs font-medium text-slate-800">{c.name}</span>
               </button>
             ))}
           </div>
+          {colorError && (
+            <p className="text-[11px] font-bold text-rose-600 animate-pulse">
+              Please choose a color variation before adding to cart.
+            </p>
+          )}
         </div>
       )}
+
+      <ProductFreeItemsBanner items={product?.freeItems} />
 
       {enablePersonalization && (
         <div className="bg-rose-50/40 rounded-xl p-4 space-y-3 border border-rose-100">

@@ -14,17 +14,17 @@ import CheckoutOrderSummary from '../components/checkout/CheckoutOrderSummary';
 import EmptyCartView from '../components/checkout/EmptyCartView';
 import OrderSuccessView from '../components/checkout/OrderSuccessView';
 
-const DELIVERY_COSTS = { standard: 350, sameday: 750, scheduled: 350 };
-
 export default function Checkout() {
     const { cartItems, cartTotal, clearCart } = useCart();
     const { settings } = useSettings();
     const navigate = useNavigate();
 
+    const [deliveryZones, setDeliveryZones] = useState([]);
     const [form, setForm] = useState({
         senderName: '', senderPhone: '', senderEmail: '',
         recipientName: '', recipientPhone: '',
         address: '', district: 'Colombo', city: '', postalCode: '',
+        zoneId: '',
         deliveryMethod: 'standard', deliveryDate: '', deliveryTime: '10:00 AM – 1:00 PM',
         paymentMethod: 'online', giftMessage: '', paymentSlip: null,
         createAccount: false, password: '',
@@ -44,12 +44,31 @@ export default function Checkout() {
                 setForm(f => ({ ...f, senderName: u.name || f.senderName, senderEmail: u.email || f.senderEmail }));
             }
         } catch {}
+
+        axios.get('/api/public/delivery-zones')
+            .then(res => {
+                const zones = Array.isArray(res.data) ? res.data : [];
+                setDeliveryZones(zones);
+                if (zones.length > 0) {
+                    const matched = zones.find(z => Array.isArray(z.districts) && z.districts.includes('Colombo')) || zones[0];
+                    setForm(f => ({ ...f, zoneId: String(matched.id) }));
+                }
+            })
+            .catch(() => {});
     }, []);
 
     const onChange = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
-    const rawDelivery = DELIVERY_COSTS[form.deliveryMethod] ?? 350;
-    const deliveryCost = (cartTotal > 5000 || appliedCoupon?.is_free_delivery) ? 0 : rawDelivery;
+    const activeZone = deliveryZones.find(z => String(z.id) === String(form.zoneId))
+        || deliveryZones.find(z => Array.isArray(z.districts) && z.districts.includes(form.district))
+        || deliveryZones[0];
+
+    const baseDelivery = activeZone ? Number(activeZone.rate) : 350;
+    const methodExtra = form.deliveryMethod === 'sameday' ? 400 : 0;
+    const isFree = (activeZone?.free_delivery_above && cartTotal >= Number(activeZone.free_delivery_above))
+        || (cartTotal > 15000)
+        || appliedCoupon?.is_free_delivery;
+    const deliveryCost = isFree ? 0 : (baseDelivery + methodExtra);
     const grandTotal = cartTotal + deliveryCost - couponDiscount;
 
     const handleApplyCoupon = async () => {
@@ -81,7 +100,7 @@ export default function Checkout() {
             formData.append('sender_email', form.senderEmail);
             formData.append('recipient_name', form.recipientName);
             formData.append('recipient_phone', form.recipientPhone);
-            formData.append('delivery_address', `${form.address}, ${form.city}, ${form.district}`);
+            formData.append('delivery_address', `${form.address}, ${form.city}, ${form.district} (${activeZone?.name || ''})`);
             formData.append('postal_code', form.postalCode);
             formData.append('delivery_method', form.deliveryMethod);
             formData.append('delivery_date', form.deliveryDate);
@@ -138,7 +157,7 @@ export default function Checkout() {
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-[3] space-y-5">
                         <CheckoutContactInfo form={form} onChange={onChange} />
-                        <CheckoutDelivery form={form} onChange={onChange} />
+                        <CheckoutDelivery form={form} onChange={onChange} zones={deliveryZones} activeZone={activeZone} />
                         <CheckoutPayment form={form} onChange={onChange} settings={settings} />
                     </div>
                     <div className="flex-[2] min-w-0">

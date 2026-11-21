@@ -33,8 +33,8 @@ export default function AdminDashboard() {
             pageTitle="Dashboard"
             pageSubtitle="Real-time sales, order fulfillment, and inventory analytics."
         >
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-6">
+            {/* Stats Row: 2 cards per row on mobile, 4 on desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 md:gap-5 mb-6">
                 <AdminStatCard
                     label="Total Revenue"
                     value={`Rs. ${Number(stats?.totalRevenue || 0).toLocaleString()}`}

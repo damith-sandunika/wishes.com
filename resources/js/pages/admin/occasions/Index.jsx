@@ -25,12 +25,12 @@ export default function OccasionIndex() {
     useEffect(() => { fetchAll(); }, []);
 
     const destroy = async (id) => {
-        if (!confirm('Are you sure you want to delete this occasion?')) return;
+        if (!confirm('Are you sure you want to delete this special day?')) return;
         try {
             await axios.delete(`/api/occasions/${id}`);
             fetchAll();
         } catch {
-            alert('Cannot delete this occasion.');
+            alert('Cannot delete this special day.');
         }
     };
 
@@ -40,14 +40,14 @@ export default function OccasionIndex() {
 
     return (
         <AdminLayout
-            pageTitle="Gift Occasions"
-            pageSubtitle="Campaigns and festive occasions (Birthdays, Anniversaries, Romance, Corporate)."
+            pageTitle="Special Days"
+            pageSubtitle="Organize special days and celebrations (Birthdays, Anniversaries, Valentine's, New Year)."
             headerActions={
                 <Link
                     to="/admin/occasions/create"
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20"
                 >
-                    <Plus size={15} strokeWidth={2.5} /> Add Occasion
+                    <Plus size={15} strokeWidth={2.5} /> Add Special Day
                 </Link>
             }
         >
@@ -56,7 +56,7 @@ export default function OccasionIndex() {
                     <table className="w-full text-xs text-left">
                         <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                             <tr>
-                                <th className="px-5 py-3.5">Occasion &amp; Photo</th>
+                                <th className="px-5 py-3.5">Special Day &amp; Photo</th>
                                 <th className="px-5 py-3.5">Slug</th>
                                 <th className="px-5 py-3.5">Description</th>
                                 <th className="px-5 py-3.5">Icon</th>
@@ -66,9 +66,9 @@ export default function OccasionIndex() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading occasions...</td></tr>
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading special days...</td></tr>
                             ) : occList.length === 0 ? (
-                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">No occasions configured yet. Click "Add Occasion" to create one.</td></tr>
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">No special days configured yet. Click "Add Special Day" to create one.</td></tr>
                             ) : occList.map(occ => (
                                 <tr key={occ.id} className="hover:bg-slate-50/60 transition-colors">
                                     <td className="px-5 py-3.5">

@@ -1,161 +1,189 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Palette, Sparkles, Gift } from 'lucide-react';
-import axios from 'axios';
+import React from 'react';
+import { Palette, Sparkles, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import ProductAddonsSelector from './ProductAddonsSelector';
 import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
-export default function ProductCustomizationSection({ form, setForm, label, inp, extraFiles, setExtraFiles }) {
-    const colors = form.color_variations || [];
-    const occasions = form.occasions || [];
-    const [occasionsList, setOccasionsList] = useState([]);
+const resolveImg = (s) => !s ? '' : ((s.startsWith('http://') || s.startsWith('https://')) ? s : `/storage/${s.replace(/^\/?(storage\/)?/, '')}`);
 
-    useEffect(() => {
-        axios.get('/api/public/occasions')
-            .then(res => {
-                const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
-                setOccasionsList(list);
-            })
-            .catch(() => setOccasionsList([]));
-    }, []);
+export default function ProductCustomizationSection({ form, setForm, colorFiles = {}, setColorFiles, label, inp }) {
+    const colors = Array.isArray(form.color_variations) ? form.color_variations : [];
 
-    const toggleOccasion = (slug) => {
-        const next = occasions.includes(slug) ? occasions.filter(s => s !== slug) : [...occasions, slug];
-        setForm({ ...form, occasions: next });
-    };
-
-    const addColor = () => {
-        const next = [...colors, { name: 'Red', code: '#c8102e', extra_price: 0, image: '', description: '' }];
-        setForm({ ...form, color_variations: next });
-    };
-
-    const updateColor = (index, field, val) => {
-        const next = [...colors];
-        next[index] = { ...next[index], [field]: val };
-        setForm({ ...form, color_variations: next });
-    };
-
-    const removeColor = (index) => {
-        setForm({ ...form, color_variations: colors.filter((_, i) => i !== index) });
+    const addColor = () => setForm({ ...form, color_variations: [...colors, { name: 'Pink', code: '#ec4899', extra_price: 0, image: '', description: '' }] });
+    const updateColor = (i, f, v) => { const next = [...colors]; next[i] = { ...next[i], [f]: v }; setForm({ ...form, color_variations: next }); };
+    const removeColor = (i) => {
+        setForm({ ...form, color_variations: colors.filter((_, idx) => idx !== i) });
+        if (setColorFiles) {
+            const nextFiles = { ...colorFiles };
+            delete nextFiles[i];
+            setColorFiles(nextFiles);
+        }
     };
 
     return (
         <div className="space-y-6">
-            {/* Extra Product Images (Up to 3 Extra Images) */}
-            <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-200">
-                <h3 className="font-medium text-slate-800 text-sm mb-3 border-b border-slate-200 pb-2">
-                    Gallery Images (Up to 3 Extra Angles)
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {[0, 1, 2].map((idx) => (
-                        <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 text-center">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-2">Extra Image {idx + 1}</span>
-                            {form.images && form.images[idx + 1] && !extraFiles[idx] && (
-                                <img 
-                                    src={form.images[idx + 1].startsWith('http') ? form.images[idx + 1] : `/storage/${form.images[idx + 1].replace(/^\/?(storage\/)?/, '')}`} 
-                                    alt={`Extra ${idx + 1}`} 
-                                    className="w-12 h-12 mx-auto rounded object-cover mb-2 border border-slate-100" 
-                                />
-                            )}
-                            <input 
-                                type="file" 
-                                accept={ACCEPT_IMAGE_ATTR}
-                                onChange={e => {
-                                    const file = e.target.files?.[0];
-                                    if (file && validateImageFile(file).valid) {
-                                        const next = [...extraFiles];
-                                        next[idx] = file;
-                                        setExtraFiles(next);
-                                    } else {
-                                        e.target.value = '';
-                                    }
-                                }}
-                                className="text-[10px] w-full file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-[#1933C6]"
-                            />
+            {/* Section 4: Color Variations */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                            <Palette size={18} />
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Color Variations */}
-            <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-200">
-                <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
-                    <div className="flex items-center gap-2">
-                        <Palette size={16} className="text-[#1933C6]" />
-                        <h3 className="font-medium text-slate-800 text-sm">Color Variations</h3>
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-800">4. Color &amp; Palette Variations</h3>
+                            <p className="text-[11px] text-slate-500">Add color options with photo previews that display dynamically when selected by customers.</p>
+                        </div>
                     </div>
-                    <button type="button" onClick={addColor} className="inline-flex items-center gap-1 text-[11px] bg-blue-50 text-[#1933C6] font-semibold px-2.5 py-1 rounded-md hover:bg-blue-100 transition">
-                        <Plus size={12} /> Add Color
+                    <button
+                        type="button"
+                        onClick={addColor}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition-colors"
+                    >
+                        <Plus size={14} /> Add Color
                     </button>
                 </div>
 
                 {colors.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">No color variations added. Base product color will be used.</p>
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                        <p className="text-xs text-slate-500">No color variations added. The product will be sold in its default primary color.</p>
+                    </div>
                 ) : (
                     <div className="space-y-3">
-                        {colors.map((c, i) => (
-                            <div key={i} className="bg-white p-3.5 rounded-lg border border-slate-200 space-y-2">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 items-center">
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-medium">Color Name</label>
-                                        <input type="text" value={c.name || ''} onChange={e => updateColor(i, 'name', e.target.value)} placeholder="e.g. Pink" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-medium">Color Code</label>
-                                        <div className="flex items-center gap-2">
-                                            <input type="color" value={c.code || '#c8102e'} onChange={e => updateColor(i, 'code', e.target.value)} className="w-8 h-8 rounded border p-0.5 cursor-pointer" />
-                                            <input type="text" value={c.code || '#c8102e'} onChange={e => updateColor(i, 'code', e.target.value)} className={inp} />
+                        {colors.map((c, i) => {
+                            const file = colorFiles[i];
+                            const preview = file ? URL.createObjectURL(file) : resolveImg(c.image);
+
+                            return (
+                                <div key={i} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200 space-y-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                                        <div>
+                                            <label className={label}>Color Name</label>
+                                            <input
+                                                type="text"
+                                                value={c.name || ''}
+                                                onChange={e => updateColor(i, 'name', e.target.value)}
+                                                placeholder="e.g. Pastel Pink"
+                                                className={inp}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className={label}>Hex Code</label>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={c.code || '#ec4899'}
+                                                    onChange={e => updateColor(i, 'code', e.target.value)}
+                                                    className="w-9 h-9 rounded-lg border border-slate-300 p-0.5 cursor-pointer bg-white"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={c.code || '#ec4899'}
+                                                    onChange={e => updateColor(i, 'code', e.target.value)}
+                                                    className={inp}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className={label}>Extra Charge (LKR)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={c.extra_price ?? ''}
+                                                onChange={e => updateColor(i, 'extra_price', Number(e.target.value))}
+                                                placeholder="0"
+                                                className={inp}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className={label}>Color Photo (Shown on select)</label>
+                                            <div className="flex items-center gap-2">
+                                                {preview ? (
+                                                    <img src={preview} alt="Color variant" className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0 bg-white" />
+                                                ) : (
+                                                    <div className="w-9 h-9 rounded-lg bg-white border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[10px] shrink-0 font-medium">
+                                                        <ImageIcon size={14} />
+                                                    </div>
+                                                )}
+                                                <input
+                                                    type="file"
+                                                    accept={ACCEPT_IMAGE_ATTR}
+                                                    onChange={e => {
+                                                        const f = e.target.files?.[0];
+                                                        if (f && validateImageFile(f).valid && setColorFiles) {
+                                                            setColorFiles({ ...colorFiles, [i]: f });
+                                                        }
+                                                    }}
+                                                    className="text-[10px] w-full text-slate-500 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-500 uppercase font-medium">Extra Charge (Rs)</label>
-                                        <input type="number" value={c.extra_price || ''} onChange={e => updateColor(i, 'extra_price', Number(e.target.value))} placeholder="0" className={inp} />
-                                    </div>
-                                    <div className="flex items-end justify-between gap-2">
+                                    <div className="flex items-center justify-between gap-3 pt-1">
                                         <div className="flex-1">
-                                            <label className="text-[10px] text-slate-500 uppercase font-medium">Variant Img URL</label>
-                                            <input type="text" value={c.image || ''} onChange={e => updateColor(i, 'image', e.target.value)} placeholder="URL or leave blank" className={inp} />
+                                            <input
+                                                type="text"
+                                                value={c.description || ''}
+                                                onChange={e => updateColor(i, 'description', e.target.value)}
+                                                placeholder="Optional customer note for this color variation..."
+                                                className={inp}
+                                            />
                                         </div>
-                                        <button type="button" onClick={() => removeColor(i)} className="text-red-500 hover:text-red-700 p-2"><Trash2 size={16} /></button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeColor(i)}
+                                            className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                            title="Remove color"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 </div>
-                                <input type="text" value={c.description || ''} onChange={e => updateColor(i, 'description', e.target.value)} placeholder="Optional note for this color..." className={inp} />
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
-            {/* Personalization & Addons */}
-            <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-200 space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                    <Sparkles size={16} className="text-[#1933C6]" />
-                    <h3 className="font-medium text-slate-800 text-sm">Personalization &amp; Addons</h3>
+            {/* Section 5: Personalization & Add-ons */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <Sparkles size={18} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800">5. Customized Items &amp; Add-ons</h3>
+                        <p className="text-[11px] text-slate-500">Enable custom message cards, custom printing, and attach cross-selling add-on items.</p>
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap gap-6">
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                        <input type="checkbox" checked={!!form.enable_personalization} onChange={e => setForm({ ...form, enable_personalization: e.target.checked })} className="rounded text-[#1933C6] w-4 h-4" />
-                        <span>Enable Personalization (Cakes / Custom Mugs / Names)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2">
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(form.enable_personalization)}
+                            onChange={e => setForm({ ...form, enable_personalization: e.target.checked })}
+                            className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        />
+                        <div>
+                            <span className="text-xs font-bold text-slate-800 block">Enable Customization</span>
+                            <span className="text-[11px] text-slate-400">Allows customer to add custom names, photos, or plaque messages.</span>
+                        </div>
                     </label>
 
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                        <input type="checkbox" checked={form.enable_wrapping !== false} onChange={e => setForm({ ...form, enable_wrapping: e.target.checked })} className="rounded text-[#1933C6] w-4 h-4" />
-                        <span>Enable Gift Wrapping</span>
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={form.enable_wrapping !== false}
+                            onChange={e => setForm({ ...form, enable_wrapping: e.target.checked })}
+                            className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        />
+                        <div>
+                            <span className="text-xs font-bold text-slate-800 block">Enable Gift Wrapping</span>
+                            <span className="text-[11px] text-slate-400">Offer luxury ribbon wrapping &amp; wax-sealed delivery packaging.</span>
+                        </div>
                     </label>
                 </div>
 
                 <ProductAddonsSelector form={form} setForm={setForm} />
-                <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-500 block mb-2">Suitable Occasions</label>
-                    <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(occasionsList) ? occasionsList : []).map(occ => (
-                            <button key={occ.id} type="button" onClick={() => toggleOccasion(occ.slug)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${occasions.includes(occ.slug) ? 'bg-[#1933C6] text-white border-[#1933C6]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
-                                {occ.title}
-                            </button>
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
     );

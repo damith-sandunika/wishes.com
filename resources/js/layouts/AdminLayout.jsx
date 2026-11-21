@@ -46,8 +46,8 @@ export default function AdminLayout({ children, pageTitle, pageSubtitle, headerA
                 </header>
 
                 {/* Page Content Body without ugly scrollbars */}
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 scrollbar-hide">
-                    <div className="max-w-[1600px] mx-auto w-full">
+                <main className="flex-1 overflow-y-auto p-3.5 sm:p-5 md:p-6 lg:p-8 scrollbar-hide">
+                    <div className="w-full">
                         {pageTitle && (
                             <AdminPageHeader
                                 title={pageTitle}
@@ -64,8 +64,12 @@ export default function AdminLayout({ children, pageTitle, pageSubtitle, headerA
             </div>
 
             <style>{`
-                .scrollbar-hide::-webkit-scrollbar { display: none; }
-                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+                .scrollbar-hide::-webkit-scrollbar,
+                .overflow-x-auto::-webkit-scrollbar,
+                table::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+                .scrollbar-hide,
+                .overflow-x-auto,
+                table { -ms-overflow-style: none !important; scrollbar-width: none !important; }
             `}</style>
         </div>
     );

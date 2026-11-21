@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gift, Check } from 'lucide-react';
+import { Gift, Check, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 
 export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
     const [dbAddons, setDbAddons] = useState([]);
     const [selected, setSelected] = useState({});
+    const [chosenOptions, setChosenOptions] = useState({});
+    const [inputs, setInputs] = useState({});
 
     useEffect(() => {
         axios.get('/api/public/addons')
@@ -15,86 +17,164 @@ export default function ProductAddons({ allowedAddons = [], onAddonsChange }) {
     const available = useMemo(() => {
         if (Array.isArray(allowedAddons) && allowedAddons.length > 0) {
             return allowedAddons.map(item => {
-                if (typeof item === 'object' && item !== null) {
-                    const dbMatch = dbAddons.find(d => d.id === item.id);
-                    return {
-                        id: item.id,
-                        name: item.name || dbMatch?.name || 'Add-on',
-                        price: item.custom_price !== null && item.custom_price !== undefined ? Number(item.custom_price) : Number(item.price || dbMatch?.price || 0),
-                        image: item.image || dbMatch?.image || '',
-                        icon: item.icon || dbMatch?.icon || '🎁',
-                        type: item.type || dbMatch?.type || 'addon',
-                        description: item.description || dbMatch?.description || '',
-                    };
-                } else {
-                    const dbMatch = dbAddons.find(d => d.id === item || d.name === item);
-                    return dbMatch || null;
-                }
+                const id = typeof item === 'object' && item !== null ? item.id : item;
+                const dbMatch = dbAddons.find(d => d.id === id || d.name === item);
+                if (!dbMatch && typeof item !== 'object') return null;
+
+                const basePrice = item.custom_price !== null && item.custom_price !== undefined
+                    ? Number(item.custom_price)
+                    : Number(item?.price || dbMatch?.price || 0);
+
+                return {
+                    id: id,
+                    name: item?.name || dbMatch?.name || 'Add-on',
+                    price: basePrice,
+                    image: item?.image || dbMatch?.image || '',
+                    icon: item?.icon || dbMatch?.icon || '🎁',
+                    type: item?.type || dbMatch?.type || 'addon',
+                    description: item?.description || dbMatch?.description || '',
+                    options: Array.isArray(dbMatch?.options) ? dbMatch.options : (Array.isArray(item?.options) ? item.options : []),
+                    custom_fields: Array.isArray(dbMatch?.custom_fields) ? dbMatch.custom_fields : (Array.isArray(item?.custom_fields) ? item.custom_fields : []),
+                };
             }).filter(Boolean);
         }
-        return dbAddons;
+        return dbAddons.map(d => ({
+            ...d,
+            price: Number(d.price || 0),
+            options: Array.isArray(d.options) ? d.options : [],
+            custom_fields: Array.isArray(d.custom_fields) ? d.custom_fields : [],
+        }));
     }, [allowedAddons, dbAddons]);
 
-    if (available.length === 0) return null;
+    const notifyChange = (nextSelected, nextOptions, nextInputs) => {
+        if (!onAddonsChange) return;
+        const chosen = available.filter(a => nextSelected[a.id]).map(a => {
+            const opt = nextOptions[a.id] || (a.options?.[0] || null);
+            const effPrice = opt?.price !== undefined && opt?.price !== '' ? Number(opt.price) : a.price;
+            return {
+                ...a,
+                price: effPrice,
+                selected_option: opt,
+                image: opt?.image || a.image,
+                custom_inputs: nextInputs[a.id] || {},
+            };
+        });
+        onAddonsChange(chosen);
+    };
 
     const toggle = (addon) => {
         const next = { ...selected, [addon.id]: !selected[addon.id] };
-        setSelected(next);
-        if (onAddonsChange) {
-            const chosen = available.filter(a => next[a.id]);
-            onAddonsChange(chosen);
+        const nextOpts = { ...chosenOptions };
+        if (next[addon.id] && addon.options?.length > 0 && !nextOpts[addon.id]) {
+            nextOpts[addon.id] = addon.options[0];
         }
+        setSelected(next);
+        setChosenOptions(nextOpts);
+        notifyChange(next, nextOpts, inputs);
     };
 
+    const handleOptionSelect = (addonId, opt) => {
+        const nextOpts = { ...chosenOptions, [addonId]: opt };
+        setChosenOptions(nextOpts);
+        notifyChange(selected, nextOpts, inputs);
+    };
+
+    const handleInputChange = (addonId, label, val) => {
+        const nextInputs = {
+            ...inputs,
+            [addonId]: { ...(inputs[addonId] || {}), [label]: val }
+        };
+        setInputs(nextInputs);
+        notifyChange(selected, chosenOptions, nextInputs);
+    };
+
+    if (available.length === 0) return null;
+
     return (
-        <div className="bg-rose-50/40 rounded-2xl p-4 border border-rose-100/80 my-5 shadow-2xs">
-            <div className="flex items-center justify-between mb-3.5">
+        <div className="bg-rose-50/40 rounded-2xl p-4 border border-rose-100/80 my-5 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-[#c8102e]/10 text-[#c8102e]">
-                        <Gift size={16} />
-                    </span>
+                    <span className="p-1 rounded-lg bg-[#c8102e]/10 text-[#c8102e]"><Gift size={16} /></span>
                     <div>
-                        <h4 className="font-bold text-slate-900 text-xs tracking-tight">Add-ons &amp; Personalizations</h4>
-                        <p className="text-[10px] text-slate-500">Make this gift extra special with heartfelt additions</p>
+                        <h4 className="font-bold text-slate-900 text-xs tracking-tight">Add-ons &amp; Customized Items</h4>
+                        <p className="text-[10px] text-slate-500">Custom wrapping, cards, and personalized keepsakes</p>
                     </div>
                 </div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Optional</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {available.map(addon => {
                     const isChecked = Boolean(selected[addon.id]);
+                    const currentOpt = chosenOptions[addon.id] || addon.options?.[0];
+                    const displayPrice = isChecked && currentOpt?.price !== undefined && currentOpt?.price !== '' ? Number(currentOpt.price) : addon.price;
+                    const activeThumb = currentOpt?.image || addon.options?.[0]?.image || addon.image;
+
                     return (
-                        <div 
-                            key={addon.id}
-                            onClick={() => toggle(addon)}
-                            className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
-                                isChecked 
-                                ? 'bg-white border-[#c8102e] shadow-xs ring-1 ring-[#c8102e]/20' 
-                                : 'bg-white/90 border-slate-200/90 hover:border-rose-300 hover:bg-white'
-                            }`}
-                        >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200/70 flex items-center justify-center">
-                                    {addon.image ? (
-                                        <img src={addon.image} alt={addon.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-xl">{addon.icon || '🎁'}</span>
-                                    )}
+                        <div key={addon.id} className={`rounded-xl border transition-all ${isChecked ? 'bg-white border-[#c8102e] shadow-xs ring-1 ring-[#c8102e]/20' : 'bg-white/90 border-slate-200 hover:border-rose-300'}`}>
+                            <div onClick={() => toggle(addon)} className="flex items-center justify-between p-2.5 cursor-pointer">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-11 h-11 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200/70 flex items-center justify-center">
+                                        {activeThumb ? <img src={activeThumb} alt={addon.name} className="w-full h-full object-cover transition-all" /> : <span className="text-xl">{addon.icon || '🎁'}</span>}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-slate-800 truncate leading-tight">{addon.name}</p>
+                                        <p className="text-[11px] text-[#c8102e] font-extrabold mt-0.5">
+                                            {Number(displayPrice) > 0 ? `+ Rs. ${Number(displayPrice).toLocaleString()}` : 'Free'}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-bold text-slate-800 truncate leading-tight">{addon.name}</p>
-                                    <p className="text-[11px] text-[#c8102e] font-extrabold mt-0.5">
-                                        + Rs. {Number(addon.price || 0).toLocaleString()}
-                                    </p>
+                                <div className={`w-5 h-5 ml-2 rounded-md flex items-center justify-center border shrink-0 ${isChecked ? 'bg-[#c8102e] border-[#c8102e] text-white shadow-2xs' : 'border-slate-300 bg-white'}`}>
+                                    {isChecked && <Check size={12} strokeWidth={3} />}
                                 </div>
                             </div>
 
-                            <div className={`w-5 h-5 ml-2 rounded-md flex items-center justify-center border shrink-0 transition-colors ${
-                                isChecked ? 'bg-[#c8102e] border-[#c8102e] text-white shadow-2xs' : 'border-slate-300 bg-white'
-                            }`}>
-                                {isChecked && <Check size={12} strokeWidth={3} />}
-                            </div>
+                            {/* Sub-Options & Custom Field Inputs when Selected */}
+                            {isChecked && (addon.options?.length > 0 || addon.custom_fields?.length > 0) && (
+                                <div className="p-3 pt-2 border-t border-rose-100 bg-rose-50/30 space-y-2.5 text-xs">
+                                    {/* Style / Pattern Sub-options */}
+                                    {addon.options?.length > 0 && (
+                                        <div>
+                                            <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">Select Style / Option:</label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {addon.options.map((opt, i) => {
+                                                    const isOptActive = (currentOpt?.name === opt.name) || (!chosenOptions[addon.id] && i === 0);
+                                                    return (
+                                                        <button key={i} type="button" onClick={() => handleOptionSelect(addon.id, opt)}
+                                                            className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition flex items-center gap-1.5 ${isOptActive ? 'bg-[#c8102e] text-white border-[#c8102e] shadow-2xs' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'}`}>
+                                                            {opt.image && <img src={opt.image} alt={opt.name} className="w-4 h-4 rounded-sm object-cover border border-white/50" />}
+                                                            <span>{opt.name}</span>
+                                                            {opt.price ? <span className="opacity-80 font-normal">({Number(opt.price) > 0 ? `+Rs. ${Number(opt.price).toLocaleString()}` : 'Free'})</span> : null}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Custom Required Fields (Name, Age, Wish) */}
+                                    {addon.custom_fields?.map((fld, idx) => (
+                                        <div key={idx}>
+                                            <label className="text-[11px] font-bold text-slate-700 block mb-0.5">
+                                                {fld.label} {fld.required && <span className="text-red-500">*</span>}
+                                            </label>
+                                            {fld.type === 'textarea' ? (
+                                                <textarea rows={2} required={fld.required} placeholder={fld.placeholder || ''}
+                                                    value={inputs[addon.id]?.[fld.label] || ''} onChange={e => handleInputChange(addon.id, fld.label, e.target.value)}
+                                                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-blue-500 resize-none" />
+                                            ) : fld.type === 'file' ? (
+                                                <input type="file" accept="image/*" required={fld.required}
+                                                    onChange={e => handleInputChange(addon.id, fld.label, e.target.files?.[0]?.name || '')}
+                                                    className="w-full text-xs px-2 py-1 rounded-lg border border-slate-200 bg-white file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-rose-50 file:text-rose-700" />
+                                            ) : (
+                                                <input type={fld.type === 'number' ? 'number' : 'text'} required={fld.required} placeholder={fld.placeholder || ''}
+                                                    value={inputs[addon.id]?.[fld.label] || ''} onChange={e => handleInputChange(addon.id, fld.label, e.target.value)}
+                                                    className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-blue-500" />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })}

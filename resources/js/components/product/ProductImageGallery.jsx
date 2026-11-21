@@ -8,9 +8,9 @@ function setWishlist(list) {
   localStorage.setItem('wishlist', JSON.stringify(list));
 }
 
-export default function ProductImageGallery({ images = [], fallback, productId, isBestseller, enablePersonalization }) {
+export default function ProductImageGallery({ images = [], fallback, productId, isBestseller, enablePersonalization, selectedImage }) {
   const urls = images.length > 0
-    ? images.map(img => img?.startsWith('http') ? img : `/storage/${img}`)
+    ? images.filter(Boolean).map(img => img.startsWith('http://') || img.startsWith('https://') ? img : `/storage/${img.replace(/^\/?(storage\/)?/, '')}`)
     : (fallback ? [fallback] : []);
 
   const [active, setActive] = useState(0);
@@ -20,7 +20,20 @@ export default function ProductImageGallery({ images = [], fallback, productId, 
   useEffect(() => {
     if (productId) setWishlisted(getWishlist().includes(productId));
     setActive(0);
-  }, [productId, images]);
+  }, [productId]);
+
+  useEffect(() => {
+    if (selectedImage) {
+      const clean = selectedImage.startsWith('http://') || selectedImage.startsWith('https://')
+        ? selectedImage
+        : `/storage/${selectedImage.replace(/^\/?(storage\/)?/, '')}`;
+      const foundIdx = urls.findIndex(u => u === clean);
+      if (foundIdx !== -1) {
+        setFade(false);
+        setTimeout(() => { setActive(foundIdx); setFade(true); }, 120);
+      }
+    }
+  }, [selectedImage, urls]);
 
   const changeImage = (idx) => {
     if (idx === active || !urls[idx]) return;

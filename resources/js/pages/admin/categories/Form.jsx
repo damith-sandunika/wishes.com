@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../../layouts/AdminLayout';
 import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { Save, Image as ImageIcon } from 'lucide-react';
 import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 const EMPTY = { name: '', description: '', status: 1, sort_order: 0, image: null };
@@ -94,11 +94,6 @@ export default function CategoryForm() {
         <AdminLayout
             pageTitle={isEdit ? 'Edit Category' : 'Create Category'}
             pageSubtitle="Define title, descriptive banner, and hierarchy for gift grouping."
-            headerActions={
-                <Link to="/admin/categories" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-2xs transition-colors">
-                    <ArrowLeft size={14} /> Back to Categories
-                </Link>
-            }
         >
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 md:p-8 w-full">
                 {error && <div className="mb-5 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">{error}</div>}

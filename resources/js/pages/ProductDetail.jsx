@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
@@ -7,7 +7,6 @@ import ProductImageGallery from '../components/product/ProductImageGallery';
 import ProductOptions from '../components/product/ProductOptions';
 import ProductAddons from '../components/product/ProductAddons';
 import ProductReviews from '../components/product/ProductReviews';
-import ProductTrustBadges from '../components/product/ProductTrustBadges';
 import ProductCard from '../components/ProductCard';
 import { formatProduct } from '../components/product/productHelpers';
 import { useCart } from '../context/CartContext';
@@ -46,17 +45,27 @@ export default function ProductDetail() {
             .finally(() => setLoading(false));
     }, [id]);
 
+    const allGalleryImages = useMemo(() => {
+        if (!product) return [];
+        const base = Array.isArray(product.images) && product.images.length > 0
+            ? product.images
+            : (product.image ? [product.image] : []);
+        const colorImgs = (product.colorVariations || []).map(c => c.image).filter(Boolean);
+        return Array.from(new Set([...base, ...colorImgs]));
+    }, [product]);
+
     const handleAddToCart = (opts) => {
         if (!product || !addToCart) return;
         const qty = opts?.qty || 1;
         const addonTotal = addons.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
-        const addonNames = addons.map(a => a.name).join(', ');
+        const addonNames = addons.map(a => (a.selected_option?.name ? `${a.name} (${a.selected_option.name})` : a.name)).join(', ');
 
         addToCart({
             ...product,
             ...opts,
             price: product.price + addonTotal,
-            addonsSummary: addonNames || null
+            addonsSummary: addonNames || null,
+            selectedAddons: addons,
         }, qty);
 
         setAddedToCart(true);
@@ -108,11 +117,12 @@ export default function ProductDetail() {
                     <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
                         <div className="w-full md:w-5/12 shrink-0">
                             <ProductImageGallery
-                                images={selectedColorImg ? [selectedColorImg, ...product.images.filter(x => x !== selectedColorImg)] : product.images}
+                                images={allGalleryImages}
                                 fallback={product.image}
                                 productId={product.id}
                                 isBestseller={product.isBestseller}
                                 enablePersonalization={product.enablePersonalization}
+                                selectedImage={selectedColorImg}
                             />
                         </div>
 
@@ -127,8 +137,6 @@ export default function ProductDetail() {
                         </div>
                     </div>
                 </div>
-
-                <ProductTrustBadges />
 
                 <ProductReviews productId={product.id} productName={product.name} initialReviews={product.reviews} />
 

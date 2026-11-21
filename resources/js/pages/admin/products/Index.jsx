@@ -49,8 +49,8 @@ export default function ProductIndex() {
             pageTitle="Products Management"
             pageSubtitle="Maintain gift catalog items, customize variations, and configure prices."
             headerActions={
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-64">
+                <div className="flex items-center justify-end gap-2.5 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-64">
                         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
@@ -62,7 +62,7 @@ export default function ProductIndex() {
                     </div>
                     <Link
                         to="/admin/products/create"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20 shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20 shrink-0"
                     >
                         <Plus size={15} strokeWidth={2.5} />
                         <span>Add Product</span>

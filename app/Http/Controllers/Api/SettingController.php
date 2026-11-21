@@ -48,6 +48,14 @@ class SettingController extends Controller
             'social_tiktok',
             'social_youtube',
             'social_whatsapp',
+            'whatsapp_number',
+            'faq_items',
+            'faq_support_text',
+            'policy_delivery_highlights',
+            'policy_delivery',
+            'policy_privacy',
+            'policy_terms',
+            'policy_returns',
         ];
 
         $settings = Cache::remember('public_settings', 3600, function () use ($allowedKeys) {

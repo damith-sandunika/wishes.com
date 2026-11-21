@@ -79,13 +79,13 @@ export default function CategoryIndex() {
             pageTitle="Categories Management"
             pageSubtitle="Drag & drop rows to reorder how collections appear in the storefront."
             headerActions={
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center justify-end gap-2.5 w-full sm:w-auto">
                     {savedMsg && (
-                        <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 font-semibold">
+                        <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-semibold truncate">
                             {savedMsg}
                         </span>
                     )}
-                    <div className="relative w-full sm:w-64">
+                    <div className="relative flex-1 sm:w-64">
                         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
@@ -97,7 +97,7 @@ export default function CategoryIndex() {
                     </div>
                     <Link
                         to="/admin/categories/create"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20 shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-500/20 shrink-0"
                     >
                         <Plus size={15} strokeWidth={2.5} />
                         <span>Add Category</span>

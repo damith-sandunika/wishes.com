@@ -29,18 +29,20 @@ const PAGE_SIZE = 12;
 
 const formatProduct = (p) => {
   const revs = Array.isArray(p.reviews) ? p.reviews : [];
-  const avg = revs.length > 0 
+  const avg = revs.length > 0
     ? Number((revs.reduce((sum, r) => sum + Number(r.rating || 5), 0) / revs.length).toFixed(1)) : 5.0;
   return {
     id: p.id,
     name: p.name,
+    short_description: p.short_description || '',
+    categoryName: p.category?.name || '',
     price: p.discount_price || p.selling_price,
     oldPrice: p.discount_price ? p.selling_price : null,
     image: p.images?.length ? (p.images[0].startsWith('http') ? p.images[0] : `/storage/${p.images[0]}`) : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300&q=80',
     discount: p.discount_price ? Math.round(((p.selling_price - p.discount_price) / p.selling_price) * 100) : 0,
     isBestseller: p.is_featured,
-    categoryName: p.category?.name || '',
     occasions: Array.isArray(p.occasions) ? p.occasions : [],
+    free_items: p.free_items || [],
     rating: avg,
     reviewsCount: revs.length,
   };
@@ -77,7 +79,7 @@ export default function Shop() {
       if (Array.isArray(list) && list.length > 0) {
         setOccasions([{ label: 'All Gifts', slug: '' }, ...list.map(o => ({ label: o.title, slug: o.slug }))]);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const filtered = allProducts.filter(p => {
@@ -108,7 +110,7 @@ export default function Shop() {
       <Header />
       <PageHero
         title="Shop Gifts"
-        subtitle="Discover curated gifts tailored for life's most precious occasions."
+        subtitle="Discover curated gifts tailored for life's most precious special days and celebrations."
         badge="Curated Collection"
         breadcrumbs={[
           { label: 'Home', to: '/' },
@@ -124,13 +126,13 @@ export default function Shop() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-              <span className="text-xs text-gray-500">Showing {Math.min((page-1)*PAGE_SIZE+1, filtered.length)}–{Math.min(page*PAGE_SIZE, filtered.length)} of <strong>{filtered.length}</strong></span>
+              <span className="text-xs text-gray-500">Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of <strong>{filtered.length}</strong></span>
               <div className="flex items-center gap-2">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:border-brand">
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode==='grid' ? 'text-brand' : 'text-gray-400'}`}><Grid3X3 size={16} /></button>
-                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode==='list' ? 'text-brand' : 'text-gray-400'}`}><List size={16} /></button>
+                <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded ${viewMode === 'grid' ? 'text-brand' : 'text-gray-400'}`}><Grid3X3 size={16} /></button>
+                <button onClick={() => setViewMode('list')} className={`p-1.5 rounded ${viewMode === 'list' ? 'text-brand' : 'text-gray-400'}`}><List size={16} /></button>
               </div>
             </div>
 
@@ -142,11 +144,11 @@ export default function Shop() {
 
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-8">
-                <button disabled={page===1} onClick={() => setPage(page-1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs disabled:opacity-40 hover:border-brand hover:text-brand transition-colors">Prev</button>
-                {Array.from({length: totalPages}, (_, i) => i+1).map(n => (
-                  <button key={n} onClick={() => setPage(n)} className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${n===page ? 'bg-brand text-white' : 'border border-gray-200 text-gray-600 hover:border-brand'}`}>{n}</button>
+                <button disabled={page === 1} onClick={() => setPage(page - 1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs disabled:opacity-40 hover:border-brand hover:text-brand transition-colors">Prev</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <button key={n} onClick={() => setPage(n)} className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${n === page ? 'bg-brand text-white' : 'border border-gray-200 text-gray-600 hover:border-brand'}`}>{n}</button>
                 ))}
-                <button disabled={page===totalPages} onClick={() => setPage(page+1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs disabled:opacity-40 hover:border-brand hover:text-brand transition-colors">Next</button>
+                <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs disabled:opacity-40 hover:border-brand hover:text-brand transition-colors">Next</button>
               </div>
             )}
           </div>

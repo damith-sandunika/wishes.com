@@ -29,18 +29,28 @@ export default function Category() {
             const catProds = rawList.filter(p => {
                 if (currentCat) return p.category_id === currentCat.id;
                 return p.category_id == id;
-            }).map(p => ({
-                id: p.id,
-                name: p.name,
-                price: p.discount_price || p.selling_price,
-                oldPrice: p.discount_price ? p.selling_price : null,
-                discount: p.discount_price ? Math.round(((p.selling_price - p.discount_price) / p.selling_price) * 100) : 0,
-                image: p.images?.length > 0
-                    ? (p.images[0].startsWith('http') ? p.images[0] : `/storage/${p.images[0]}`)
-                    : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=80',
-                rating: 4.8,
-                reviewsCount: 120,
-            }));
+            }).map(p => {
+                const revs = Array.isArray(p.reviews) ? p.reviews : [];
+                const count = revs.length;
+                const avg = count > 0
+                    ? Number((revs.reduce((sum, r) => sum + Number(r.rating || 5), 0) / count).toFixed(1))
+                    : 0;
+                return {
+                    id: p.id,
+                    name: p.name,
+                    short_description: p.short_description || '',
+                    categoryName: p.category?.name || currentCat?.name || '',
+                    price: p.discount_price || p.selling_price,
+                    oldPrice: p.discount_price ? p.selling_price : null,
+                    discount: p.discount_price ? Math.round(((p.selling_price - p.discount_price) / p.selling_price) * 100) : 0,
+                    free_items: p.free_items || [],
+                    image: p.images?.length > 0
+                        ? (p.images[0].startsWith('http') ? p.images[0] : `/storage/${p.images[0]}`)
+                        : 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&q=80',
+                    rating: avg,
+                    reviewsCount: count,
+                };
+            });
 
             setProducts(catProds);
         }).catch(console.error).finally(() => setLoading(false));

@@ -10,7 +10,7 @@ const FEATURES = [
   {
     icon: Calendar,
     title: 'Scheduled Delivery',
-    subtitle: 'Choose your special date & time',
+    subtitle: 'Choose special date & time',
   },
   {
     icon: Gift,
@@ -26,24 +26,25 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section className="py-6 sm:py-8 bg-white border-y border-[#ecd9c6]/50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:divide-x lg:divide-[#ecd9c6]/70">
+    <section className="py-3.5 sm:py-5 bg-gradient-to-r from-white via-rose-50/40 to-white border-y border-rose-100/70 shadow-2xs">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6 lg:divide-x lg:divide-rose-100/80">
           {FEATURES.map(({ icon: Icon, title, subtitle }, index) => (
             <div
               key={title}
-              className={`flex items-center gap-3 sm:gap-4 p-2 transition-all duration-300 hover:translate-x-1 ${
+              className={`flex items-center gap-2.5 sm:gap-3.5 p-2.5 sm:p-2 rounded-2xl bg-white/90 sm:bg-transparent border border-rose-100/80 sm:border-0 shadow-2xs sm:shadow-none hover:shadow-xs transition-all duration-300 group ${
                 index !== 0 ? 'lg:pl-6' : ''
               }`}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#faf7f2] border border-[#ecd9c6] flex items-center justify-center text-[#990011] shrink-0 shadow-2xs">
-                <Icon size={20} strokeWidth={1.8} />
+              <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-rose-50/80 border border-rose-200/80 text-[#c8102e] flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                <Icon size={18} strokeWidth={2.2} className="sm:hidden" />
+                <Icon size={20} strokeWidth={2} className="hidden sm:block" />
               </div>
-              <div className="min-w-0">
-                <p className="font-bold text-gray-900 text-xs sm:text-sm tracking-tight truncate">
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-slate-900 text-[11px] sm:text-xs md:text-[13px] tracking-tight leading-tight truncate">
                   {title}
                 </p>
-                <p className="text-gray-400 text-[11px] sm:text-xs truncate mt-0.5">
+                <p className="text-slate-500 text-[9.5px] sm:text-[11px] font-medium leading-tight truncate mt-0.5">
                   {subtitle}
                 </p>
               </div>

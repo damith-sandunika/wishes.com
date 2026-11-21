@@ -110,20 +110,26 @@ export default function CategoryGrid() {
             to={`/category/${cat.slug}`}
             className="flex-shrink-0 group flex flex-col items-center w-20 sm:w-24 md:w-28 text-center"
           >
-            {/* Circle with pure white background and zoom-out contain */}
-            <div className="relative w-18 h-18 sm:w-22 sm:h-22 md:w-24 md:h-24 rounded-full bg-white shadow-xs border border-slate-100 ring-2 ring-rose-100/60 group-hover:ring-[#c8102e] group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300 overflow-hidden flex items-center justify-center p-2.5">
-              {cat.image ? (
-                <img 
-                  src={cat.image} 
-                  alt={cat.name} 
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110" 
-                />
-              ) : (
-                <div className="w-full h-full rounded-full bg-rose-50 flex items-center justify-center text-[#c8102e]">
-                  <Gift size={22} className="opacity-75 group-hover:scale-110 transition-transform" />
-                </div>
-              )}
+            {/* Category Circle with Soft Grounding Shade */}
+            <div className="relative flex flex-col items-center">
+              <div className="relative z-10 w-18 h-18 sm:w-22 sm:h-22 md:w-24 md:h-24 rounded-full bg-white border border-slate-100 ring-2 ring-rose-100/60 group-hover:ring-[#c8102e] group-hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex items-center justify-center p-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.06)] group-hover:shadow-[0_10px_20px_-3px_rgba(200,16,46,0.2)]">
+                {cat.image ? (
+                  <img 
+                    src={cat.image} 
+                    alt={cat.name} 
+                    className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110" 
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-rose-50 flex items-center justify-center text-[#c8102e]">
+                    <Gift size={22} className="opacity-75 group-hover:scale-110 transition-transform" />
+                  </div>
+                )}
+              </div>
+
+              {/* Subtle Red/Rose Grounding Shade */}
+              <div className="w-12 sm:w-14 md:w-16 h-2 -mt-1 rounded-full bg-gradient-to-r from-transparent via-[#c8102e]/35 to-transparent blur-[2.5px] group-hover:scale-75 group-hover:opacity-60 transition-all duration-300 pointer-events-none" />
             </div>
+
             <span className="text-[11px] sm:text-xs text-slate-800 font-semibold leading-tight group-hover:text-[#c8102e] transition-colors mt-2 truncate max-w-full px-1">
               {cat.name}
             </span>

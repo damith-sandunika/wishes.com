@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PageHero from '../components/PageHero';
-import { ChevronDown, HelpCircle, Phone, MessageCircle } from 'lucide-react';
+import { ChevronDown, MessageCircle } from 'lucide-react';
 
-const FAQS = [
+const DEFAULT_FAQS = [
     {
         q: 'Do you offer same-day delivery in Colombo and suburbs?',
         a: 'Yes! We offer same-day delivery across Colombo 1-15 and immediate suburbs (Dehiwala, Nugegoda, Rajagiriya, Battaramulla, Mount Lavinia, etc.) for orders placed before 12:00 PM.'
     },
     {
         q: 'Can I choose a specific delivery date and time slot?',
-        a: 'Absolutely. During checkout, you can select your preferred delivery date (up to 30 days in advance) as well as a convenient time slot: Morning (10 AM - 1 PM), Afternoon (1 PM - 4 PM), or Evening (4 PM - 7 PM).'
+        a: 'During checkout, you can select your preferred delivery date (up to 30 days in advance) as well as a convenient time slot: Morning (10 AM - 1 PM), Afternoon (1 PM - 4 PM), or Evening (4 PM - 7 PM).'
     },
     {
         q: 'How does personalization work for mugs, frames, and greeting cards?',
-        a: 'When you select any personalized gift item, text input boxes appear directly on the product page where you can specify recipient names, custom quotes, or greeting card wishes. If your item requires a photo, our customer service team will reach out via WhatsApp immediately after order placement.'
+        a: 'When you select any personalized gift item, customization input boxes appear directly on the product page where you can specify recipient names, custom quotes, or greeting card wishes.'
     },
     {
         q: 'What payment methods do you accept?',
@@ -23,12 +24,32 @@ const FAQS = [
     },
     {
         q: 'Are the flowers delivered fresh?',
-        a: 'Yes, 100%! All our floral bouquets and arrangements are freshly sourced on the day of delivery from local growers and arranged in temperature-controlled preparation rooms with water packs to preserve peak freshness.'
+        a: 'Yes, 100%! All our floral bouquets and arrangements are freshly sourced on the day of delivery from local growers and arranged in temperature-controlled preparation rooms with water packs.'
     },
 ];
 
 export default function FAQ() {
+    const [faqs, setFaqs] = useState(DEFAULT_FAQS);
+    const [supportText, setSupportText] = useState('Chat with our dedicated support team on WhatsApp for instant assistance.');
+    const [waNumber, setWaNumber] = useState('94718080582');
     const [openIdx, setOpenIdx] = useState(0);
+
+    useEffect(() => {
+        axios.get('/api/public/settings')
+            .then(res => {
+                const raw = res.data?.faq_items;
+                if (raw) {
+                    try {
+                        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        if (Array.isArray(parsed) && parsed.length > 0) setFaqs(parsed);
+                    } catch (_) {}
+                }
+                if (res.data?.faq_support_text) setSupportText(res.data.faq_support_text);
+                const phone = res.data?.whatsapp_number || res.data?.social_whatsapp;
+                if (phone) setWaNumber(phone.replace(/[^0-9]/g, ''));
+            })
+            .catch(() => {});
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -37,16 +58,15 @@ export default function FAQ() {
             <PageHero
                 title="Frequently Asked Questions"
                 subtitle="Got questions about gift orders, delivery times or custom items? We're here to help!"
-                badge="Help & Support"
+                badge="Help &amp; Support"
                 breadcrumbs={[
                     { label: 'Home', to: '/' },
                     { label: 'FAQ' }
                 ]}
             />
             <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full">
-
                 <div className="space-y-3 mb-12">
-                    {FAQS.map((faq, idx) => (
+                    {faqs.map((faq, idx) => (
                         <div
                             key={idx}
                             className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm transition-all"
@@ -70,17 +90,17 @@ export default function FAQ() {
                     ))}
                 </div>
 
-                {/* Contact Banner */}
+                {/* Dynamic Contact Banner */}
                 <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-3xl p-6 md:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-lg">
                     <div>
                         <h4 className="font-bold text-lg mb-1">Still have questions?</h4>
-                        <p className="text-xs text-rose-100">Chat with our dedicated support team on WhatsApp for instant assistance.</p>
+                        <p className="text-xs text-rose-100">{supportText}</p>
                     </div>
                     <a
-                        href="https://wa.me/94718080582"
+                        href={`https://wa.me/${waNumber}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 bg-white text-brand px-6 py-3 rounded-xl font-bold text-xs hover:bg-rose-50 transition-colors shadow"
+                        className="inline-flex items-center gap-2 bg-white text-brand px-6 py-3 rounded-xl font-bold text-xs hover:bg-rose-50 transition-colors shadow shrink-0"
                     >
                         <MessageCircle size={16} /> WhatsApp Us Now
                     </a>
