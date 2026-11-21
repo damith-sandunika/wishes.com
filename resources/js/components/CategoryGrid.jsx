@@ -32,37 +32,37 @@ export default function CategoryGrid() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Smooth Auto-rotation Carousel
   useEffect(() => {
     if (isPaused || categories.length <= 4) return;
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const el = scrollRef.current;
         const maxScroll = el.scrollWidth - el.clientWidth;
-        if (el.scrollLeft >= maxScroll - 5) {
+        if (el.scrollLeft >= maxScroll - 10) {
           el.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          el.scrollBy({ left: 160, behavior: 'smooth' });
+          el.scrollBy({ left: 140, behavior: 'smooth' });
         }
       }
-    }, 3200);
+    }, 2800);
     return () => clearInterval(interval);
   }, [isPaused, categories.length]);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: direction * 220, behavior: 'smooth' });
+      scrollRef.current.scrollBy({ left: direction * 200, behavior: 'smooth' });
     }
   };
 
   if (loading) {
     return (
-      <section className="py-8 max-w-7xl mx-auto px-4 lg:px-6">
-        <div className="h-6 w-44 bg-slate-100 rounded-md animate-pulse mb-6" />
+      <section className="py-4 max-w-7xl mx-auto px-4 lg:px-6">
         <div className="flex gap-4 sm:gap-6 overflow-hidden">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 flex flex-col items-center w-24 sm:w-28 animate-pulse">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-100 mb-3" />
-              <div className="h-3 w-16 bg-slate-100 rounded" />
+            <div key={i} className="flex-shrink-0 flex flex-col items-center w-20 sm:w-24 animate-pulse">
+              <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-full bg-slate-100 mb-2" />
+              <div className="h-2.5 w-14 bg-slate-100 rounded" />
             </div>
           ))}
         </div>
@@ -73,45 +73,35 @@ export default function CategoryGrid() {
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-8 sm:py-10 max-w-7xl mx-auto px-4 lg:px-6 relative group/section">
-      <div className="flex items-end justify-between mb-6 pb-2 border-b border-rose-100/50">
-        <div>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-rose-600 mb-1 block">Curated Collections</span>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Shop by <span className="text-[#c8102e]">Category</span>
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1.5 mr-2">
-            <button 
-              onClick={() => scroll(-1)} 
-              className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-[#c8102e] flex items-center justify-center transition shadow-2xs active:scale-95"
-              aria-label="Previous categories"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button 
-              onClick={() => scroll(1)} 
-              className="w-8 h-8 rounded-full border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-[#c8102e] flex items-center justify-center transition shadow-2xs active:scale-95"
-              aria-label="Next categories"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <Link to="/shop" className="text-[#c8102e] font-bold text-xs hover:text-red-800 transition flex items-center gap-1 group">
-            <span>View All</span>
-            <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
-          </Link>
-        </div>
-      </div>
+    <section className="py-4 sm:py-6 max-w-7xl mx-auto px-4 lg:px-6 relative group/section">
+      {/* Floating Navigation Controls on Hover */}
+      {categories.length > 5 && (
+        <>
+          <button 
+            onClick={() => scroll(-1)}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 shadow-md border border-slate-200 text-slate-700 hover:text-[#c8102e] flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 active:scale-95"
+            aria-label="Previous categories"
+          >
+            <ChevronLeft size={17} />
+          </button>
+          <button 
+            onClick={() => scroll(1)}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 shadow-md border border-slate-200 text-slate-700 hover:text-[#c8102e] flex items-center justify-center opacity-0 group-hover/section:opacity-100 transition-opacity duration-200 active:scale-95"
+            aria-label="Next categories"
+          >
+            <ChevronRight size={17} />
+          </button>
+        </>
+      )}
 
+      {/* Category Cards Carousel */}
       <div 
         ref={scrollRef}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
-        className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 scrollbar-hide scroll-smooth"
+        className="flex gap-4 sm:gap-6 overflow-x-auto py-2 px-1 scrollbar-hide scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {categories.map((cat) => (
@@ -120,20 +110,21 @@ export default function CategoryGrid() {
             to={`/category/${cat.slug}`}
             className="flex-shrink-0 group flex flex-col items-center w-20 sm:w-24 md:w-28 text-center"
           >
-            <div className="relative w-18 h-18 sm:w-22 sm:h-22 md:w-26 md:h-26 rounded-full bg-linear-to-b from-rose-50 to-white shadow-sm p-1 ring-2 ring-rose-100/70 group-hover:ring-[#c8102e] group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300 overflow-hidden flex items-center justify-center">
+            {/* Circle with pure white background and zoom-out contain */}
+            <div className="relative w-18 h-18 sm:w-22 sm:h-22 md:w-24 md:h-24 rounded-full bg-white shadow-xs border border-slate-100 ring-2 ring-rose-100/60 group-hover:ring-[#c8102e] group-hover:shadow-md group-hover:-translate-y-1 transition-all duration-300 overflow-hidden flex items-center justify-center p-2.5">
               {cat.image ? (
                 <img 
                   src={cat.image} 
                   alt={cat.name} 
-                  className="w-full h-full object-cover rounded-full group-hover:scale-108 transition-transform duration-500" 
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110" 
                 />
               ) : (
-                <div className="w-full h-full rounded-full bg-linear-to-tr from-rose-100 to-rose-50 flex items-center justify-center text-[#c8102e] font-bold">
-                  <Gift size={24} className="opacity-75 group-hover:scale-115 transition-transform" />
+                <div className="w-full h-full rounded-full bg-rose-50 flex items-center justify-center text-[#c8102e]">
+                  <Gift size={22} className="opacity-75 group-hover:scale-110 transition-transform" />
                 </div>
               )}
             </div>
-            <span className="text-xs sm:text-[13px] text-slate-800 font-semibold leading-tight group-hover:text-[#c8102e] transition-colors mt-2.5 truncate max-w-full px-1">
+            <span className="text-[11px] sm:text-xs text-slate-800 font-semibold leading-tight group-hover:text-[#c8102e] transition-colors mt-2 truncate max-w-full px-1">
               {cat.name}
             </span>
           </Link>
