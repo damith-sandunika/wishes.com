@@ -5,6 +5,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import ProductPricingSection from './ProductPricingSection';
 import ProductCustomizationSection from './ProductCustomizationSection';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 const EMPTY = { name: '', sku: '', category_id: '', selling_price: '', discount_price: '', current_stock: '', unit_type: 'piece', status: 1, short_description: '', description: '', supplier_id: '', enable_personalization: false, enable_wrapping: true, color_variations: [], allowed_addons: ['card', 'teddy', 'ferrero', 'candle'] };
 
@@ -159,7 +160,16 @@ export default function ProductForm() {
                                                 <span className="text-[11px] text-slate-500 font-medium">Current primary photo</span>
                                             </div>
                                         )}
-                                        <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} className="w-full text-xs font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                                        <input 
+                                            type="file" 
+                                            accept={ACCEPT_IMAGE_ATTR} 
+                                            onChange={e => {
+                                                const f = e.target.files?.[0];
+                                                if (f && validateImageFile(f).valid) setImageFile(f);
+                                                else e.target.value = '';
+                                            }} 
+                                            className="w-full text-xs font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+                                        />
                                     </div>
                                 </div>
                                 <div>

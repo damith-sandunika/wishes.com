@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Services\ImageOptimizerService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -25,14 +26,16 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable',
+            'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'description' => 'nullable|string',
             'status' => 'boolean',
             'sort_order' => 'integer',
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image'), 'categories', (string)$request->name, 1200
+            );
         } elseif ($request->image === 'null') {
             $validated['image'] = null;
         }
@@ -62,7 +65,10 @@ class CategoryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('categories', 'public');
+            $request->validate(['image' => 'file|mimes:jpg,jpeg,png,webp|max:3072']);
+            $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image'), 'categories', (string)$request->name, 1200
+            );
         } elseif ($request->image === 'null') {
             $validated['image'] = null;
         } else {

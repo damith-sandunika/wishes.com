@@ -69,7 +69,7 @@ class OrderController extends Controller
             'latitude' => 'nullable|string|max:50',
             'longitude' => 'nullable|string|max:50',
             'payment_method' => 'required|string|max:50',
-            'payment_slip' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
+            'payment_slip' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:3072',
             'delivery_method' => 'nullable|string|max:50',
             'delivery_charge' => 'nullable|numeric',
             'coupon_code' => 'nullable|string|max:50',

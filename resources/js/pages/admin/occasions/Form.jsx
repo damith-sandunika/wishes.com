@@ -7,6 +7,7 @@ import {
     Briefcase, Smile, Gift, Calendar, GraduationCap, Baby,
     Gem, Flower2, Crown, Wine, Coffee, Flame, PartyPopper
 } from 'lucide-react';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 const ICON_LIST = [
     { name: 'Cake', icon: Cake, label: 'Birthday' },
@@ -59,10 +60,14 @@ export default function OccasionForm() {
 
     const handleFile = (e) => {
         const f = e.target.files?.[0];
-        if (f) {
-            setFile(f);
-            setPreview(URL.createObjectURL(f));
+        if (!f) return;
+        const check = validateImageFile(f);
+        if (!check.valid) {
+            e.target.value = '';
+            return;
         }
+        setFile(f);
+        setPreview(URL.createObjectURL(f));
     };
 
     const handleSubmit = async (e) => {
@@ -158,7 +163,7 @@ export default function OccasionForm() {
                         </div>
                         <div className="flex-1 w-full space-y-2">
                             <label className="text-[11px] font-bold text-slate-700 uppercase block">Upload Photo</label>
-                            <input type="file" accept="image/*" onChange={handleFile}
+                            <input type="file" accept={ACCEPT_IMAGE_ATTR} onChange={handleFile}
                                 className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold" />
                             <input type="text" value={form.image} onChange={e => { setForm({ ...form, image: e.target.value }); setPreview(e.target.value); }}
                                 placeholder="Or enter direct photo URL..." className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 outline-none bg-slate-50/50" />

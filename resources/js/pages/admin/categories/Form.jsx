@@ -3,6 +3,7 @@ import AdminLayout from '../../../layouts/AdminLayout';
 import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 const EMPTY = { name: '', description: '', status: 1, sort_order: 0, image: null };
 
@@ -42,10 +43,14 @@ export default function CategoryForm() {
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setImageFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+        if (!file) return;
+        const check = validateImageFile(file);
+        if (!check.valid) {
+            e.target.value = '';
+            return;
         }
+        setImageFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
     };
 
     const save = async (e) => {
@@ -130,7 +135,7 @@ export default function CategoryForm() {
                                     />
                                 </div>
                             )}
-                            <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-xs font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
+                            <input type="file" accept={ACCEPT_IMAGE_ATTR} onChange={handleFileChange} className="w-full text-xs font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
                         </div>
 
                         <div className="pt-5 border-t border-slate-100 flex items-center justify-end gap-3">

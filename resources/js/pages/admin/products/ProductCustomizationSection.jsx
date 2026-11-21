@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Palette, Sparkles, Gift } from 'lucide-react';
 import axios from 'axios';
 import ProductAddonsSelector from './ProductAddonsSelector';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 export default function ProductCustomizationSection({ form, setForm, label, inp, extraFiles, setExtraFiles }) {
     const colors = form.color_variations || [];
@@ -57,11 +58,16 @@ export default function ProductCustomizationSection({ form, setForm, label, inp,
                             )}
                             <input 
                                 type="file" 
-                                accept="image/*"
+                                accept={ACCEPT_IMAGE_ATTR}
                                 onChange={e => {
-                                    const next = [...extraFiles];
-                                    next[idx] = e.target.files[0];
-                                    setExtraFiles(next);
+                                    const file = e.target.files?.[0];
+                                    if (file && validateImageFile(file).valid) {
+                                        const next = [...extraFiles];
+                                        next[idx] = file;
+                                        setExtraFiles(next);
+                                    } else {
+                                        e.target.value = '';
+                                    }
                                 }}
                                 className="text-[10px] w-full file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-[#1933C6]"
                             />

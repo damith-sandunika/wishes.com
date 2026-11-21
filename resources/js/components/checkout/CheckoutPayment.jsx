@@ -63,9 +63,25 @@ export default function CheckoutPayment({ form, onChange, settings }) {
                         </label>
                         <input
                             type="file"
-                            accept="image/*,.pdf"
+                            accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
                             required={form.paymentMethod === 'bank'}
-                            onChange={e => onChange('paymentSlip', e.target.files[0])}
+                            onChange={e => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                const ext = '.' + f.name.split('.').pop().toLowerCase();
+                                const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+                                if (!allowed.includes(ext)) {
+                                    alert('⚠️ Invalid format!\nOnly JPG, JPEG, PNG, WEBP, or PDF payment slips are allowed.');
+                                    e.target.value = '';
+                                    return;
+                                }
+                                if (f.size > 3 * 1024 * 1024) {
+                                    alert('⚠️ File size exceeds the 3MB limit!\nPlease upload a payment slip under 3MB.');
+                                    e.target.value = '';
+                                    return;
+                                }
+                                onChange('paymentSlip', f);
+                            }}
                             className="w-full text-sm text-blue-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-200 file:text-blue-800 hover:file:bg-blue-300 cursor-pointer"
                         />
                         <p className="text-xs text-blue-500 mt-2">* Your order is processed after payment is verified.</p>

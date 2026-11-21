@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\ImageOptimizerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -143,6 +144,8 @@ class ProductController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
             'status' => 'nullable|boolean',
             'stock_availability' => 'nullable|boolean',
+            'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
+            'extra_images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
     }
 
@@ -153,13 +156,16 @@ class ProductController extends Controller
             $parsed = is_string($request->images) ? json_decode($request->images, true) : $request->images;
             if (is_array($parsed) && !empty($parsed)) $images = $parsed;
         }
+        $optimizer = app(ImageOptimizerService::class);
+        $title = (string)$request->input('name', 'product');
+
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
+            $path = $optimizer->optimizeAndStore($request->file('image'), 'products', $title, 1200);
             if (!empty($images)) $images[0] = $path; else $images[] = $path;
         }
         if ($request->hasFile('extra_images')) {
-            foreach ($request->file('extra_images') as $f) {
-                $images[] = $f->store('products', 'public');
+            foreach ($request->file('extra_images') as $i => $f) {
+                $images[] = $optimizer->optimizeAndStore($f, 'products', "{$title}-{$i}", 1200);
             }
         }
         return array_values(array_unique(array_filter($images)));

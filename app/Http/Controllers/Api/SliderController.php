@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Slider;
+use App\Services\ImageOptimizerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -33,11 +34,13 @@ class SliderController extends Controller
             'link' => 'nullable|string|max:255',
             'sort_order' => 'required|integer|min:1|max:4',
             'is_active' => 'nullable|boolean',
-            'image' => 'required',
+            'image' => 'required|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('sliders', 'public');
+            $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image'), 'sliders', 'hero-banner-' . $request->sort_order, 1920
+            );
         }
 
         $validated['is_active'] = $request->boolean('is_active', true);
@@ -60,14 +63,16 @@ class SliderController extends Controller
             'link' => 'nullable|string|max:255',
             'sort_order' => 'required|integer|min:1|max:4',
             'is_active' => 'nullable|boolean',
-            'image' => 'nullable',
+            'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
         ]);
 
         if ($request->hasFile('image')) {
             if ($slider->image && !str_starts_with($slider->image, 'http')) {
                 Storage::disk('public')->delete($slider->image);
             }
-            $validated['image'] = $request->file('image')->store('sliders', 'public');
+            $validated['image'] = app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image'), 'sliders', 'hero-banner-' . $slider->sort_order, 1920
+            );
         } else {
             unset($validated['image']);
         }

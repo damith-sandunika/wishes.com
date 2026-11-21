@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Addon;
+use App\Services\ImageOptimizerService;
 use Illuminate\Http\Request;
 
 class AddonController extends Controller
@@ -30,12 +31,15 @@ class AddonController extends Controller
             'type' => 'nullable|string|in:addon,personalization',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable|string',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
         ]);
 
         if ($request->hasFile('image_file')) {
-            $validated['image'] = '/storage/' . $request->file('image_file')->store('addons', 'public');
+            $validated['image'] = '/storage/' . app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image_file'), 'addons', (string)$validated['name'], 1200
+            );
         }
 
         $addon = Addon::create($validated);
@@ -58,12 +62,15 @@ class AddonController extends Controller
             'type' => 'nullable|string|in:addon,personalization',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable|string',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
         ]);
 
         if ($request->hasFile('image_file')) {
-            $validated['image'] = '/storage/' . $request->file('image_file')->store('addons', 'public');
+            $validated['image'] = '/storage/' . app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image_file'), 'addons', (string)$validated['name'], 1200
+            );
         }
 
         $addon->update($validated);

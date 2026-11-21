@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import { Upload, Trash2, CheckCircle2, Image as ImageIcon } from 'lucide-react';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../utils/imageValidation';
 
 const getImgUrl = (img) => {
     if (!img) return null;
@@ -128,12 +129,15 @@ export default function Sliders() {
                                     </span>
                                     <input 
                                         type="file" 
-                                        accept="image/*" 
+                                        accept={ACCEPT_IMAGE_ATTR}
                                         className="hidden" 
                                         onChange={e => {
                                             const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            const res = validateImageFile(file);
+                                            if (!res.valid) { e.target.value = ''; return; }
                                             const link = document.getElementById(`link-${orderNum}`)?.value;
-                                            if (file) handleUpload(orderNum, file, link);
+                                            handleUpload(orderNum, file, link);
                                         }}
                                     />
                                 </label>

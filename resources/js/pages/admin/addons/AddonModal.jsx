@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Sparkles, Gift } from 'lucide-react';
 import axios from 'axios';
+import { validateImageFile, ACCEPT_IMAGE_ATTR } from '../../../utils/imageValidation';
 
 const EMOJI_PRESETS = ['🎁', '💌', '🧸', '🍫', '📸', '🕯️', '🎈', '🌸', '🧁', '💍', '🎀', '⭐'];
 
@@ -39,10 +40,14 @@ export default function AddonModal({ isOpen, onClose, addon, onSaved }) {
 
     const handleFileChange = (e) => {
         const f = e.target.files?.[0];
-        if (f) {
-            setFile(f);
-            setPreview(URL.createObjectURL(f));
+        if (!f) return;
+        const check = validateImageFile(f);
+        if (!check.valid) {
+            e.target.value = '';
+            return;
         }
+        setFile(f);
+        setPreview(URL.createObjectURL(f));
     };
 
     const handleSubmit = async (e) => {
@@ -157,7 +162,7 @@ export default function AddonModal({ isOpen, onClose, addon, onSaved }) {
                                 </div>
                             )}
                             <div className="flex-1 space-y-1">
-                                <input type="file" accept="image/*" onChange={handleFileChange}
+                                <input type="file" accept={ACCEPT_IMAGE_ATTR} onChange={handleFileChange}
                                     className="text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                                 <input type="text" value={form.image} onChange={e => { setForm({ ...form, image: e.target.value }); setPreview(e.target.value); }}
                                     placeholder="Or paste image URL" className="w-full text-[10px] px-2 py-1 rounded border border-slate-200 outline-none" />

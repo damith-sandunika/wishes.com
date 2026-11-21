@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Occasion;
+use App\Services\ImageOptimizerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -30,6 +31,7 @@ class OccasionController extends Controller
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'bg_gradient' => 'nullable|string|max:100',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
@@ -40,7 +42,9 @@ class OccasionController extends Controller
         }
 
         if ($request->hasFile('image_file')) {
-            $validated['image'] = '/storage/' . $request->file('image_file')->store('occasions', 'public');
+            $validated['image'] = '/storage/' . app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image_file'), 'occasions', (string)$validated['title'], 1200
+            );
         }
 
         $occasion = Occasion::create($validated);
@@ -63,6 +67,7 @@ class OccasionController extends Controller
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable',
+            'image_file' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:3072',
             'bg_gradient' => 'nullable|string|max:100',
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
@@ -73,7 +78,9 @@ class OccasionController extends Controller
         }
 
         if ($request->hasFile('image_file')) {
-            $validated['image'] = '/storage/' . $request->file('image_file')->store('occasions', 'public');
+            $validated['image'] = '/storage/' . app(ImageOptimizerService::class)->optimizeAndStore(
+                $request->file('image_file'), 'occasions', (string)$validated['title'], 1200
+            );
         }
 
         $occasion->update($validated);
