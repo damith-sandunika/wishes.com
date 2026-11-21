@@ -2,21 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../../layouts/AdminLayout';
 import AdminStatusBadge from '../../../components/admin/AdminStatusBadge';
 import axios from 'axios';
-import { Plus, Pencil, Trash2, Search, FolderTree } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, FolderTree, GripVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function CategoryIndex() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [dragIndex, setDragIndex] = useState(null);
+    const [savedMsg, setSavedMsg] = useState('');
 
     const fetchAll = useCallback(() => {
         setLoading(true);
         axios.get('/api/categories')
             .then(res => {
-                const list = Array.isArray(res.data) 
-                    ? res.data 
-                    : (Array.isArray(res.data?.data) ? res.data.data : []);
+                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
                 setCategories(list);
             })
             .catch(() => setCategories([]))
@@ -35,10 +35,40 @@ export default function CategoryIndex() {
         }
     };
 
-    const catList = Array.isArray(categories) 
-        ? categories 
-        : (Array.isArray(categories?.data) ? categories.data : []);
+    const handleDragStart = (e, index) => {
+        setDragIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+    };
 
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e, targetIndex) => {
+        e.preventDefault();
+        if (dragIndex === null || dragIndex === targetIndex) return;
+
+        const updated = [...categories];
+        const [moved] = updated.splice(dragIndex, 1);
+        updated.splice(targetIndex, 0, moved);
+
+        setCategories(updated);
+        setDragIndex(null);
+        setSavedMsg('Updating order...');
+
+        axios.post('/api/categories/reorder', {
+            order: updated.map(c => c.id)
+        }).then(() => {
+            setSavedMsg('✓ Order updated successfully!');
+            setTimeout(() => setSavedMsg(''), 2500);
+        }).catch(() => {
+            setSavedMsg('Failed to update order');
+            fetchAll();
+        });
+    };
+
+    const catList = Array.isArray(categories) ? categories : [];
     const filtered = catList.filter(c => 
         (c?.name || '').toLowerCase().includes(search.toLowerCase()) ||
         (c?.slug || '').toLowerCase().includes(search.toLowerCase())
@@ -47,9 +77,14 @@ export default function CategoryIndex() {
     return (
         <AdminLayout
             pageTitle="Categories Management"
-            pageSubtitle="Organize gift collections, flowers, cakes, hampers, and accessories."
+            pageSubtitle="Drag & drop rows to reorder how collections appear in the storefront."
             headerActions={
                 <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {savedMsg && (
+                        <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 font-semibold">
+                            {savedMsg}
+                        </span>
+                    )}
                     <div className="relative w-full sm:w-64">
                         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -71,10 +106,15 @@ export default function CategoryIndex() {
             }
         >
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-3 bg-slate-50/70 border-b border-slate-200/80 text-[11px] text-slate-500 font-medium flex items-center justify-between">
+                    <span>💡 Tip: Hold and drag the <b>⠿ handle</b> to change category display order.</span>
+                    <span className="font-semibold text-slate-600">{filtered.length} categories</span>
+                </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                         <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                             <tr>
+                                <th className="px-4 py-3.5 w-16 text-center">Order</th>
                                 <th className="px-5 py-3.5">Category Name</th>
                                 <th className="px-5 py-3.5">Slug</th>
                                 <th className="px-5 py-3.5">Description</th>
@@ -84,11 +124,30 @@ export default function CategoryIndex() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading categories...</td></tr>
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">Loading categories...</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan="5" className="px-5 py-10 text-center text-slate-400 font-semibold">No categories found.</td></tr>
-                            ) : filtered.map(c => (
-                                <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                                <tr><td colSpan="6" className="px-5 py-10 text-center text-slate-400 font-semibold">No categories found.</td></tr>
+                            ) : filtered.map((c, idx) => (
+                                <tr 
+                                    key={c.id} 
+                                    draggable={!search.trim()}
+                                    onDragStart={(e) => handleDragStart(e, idx)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, idx)}
+                                    className={`transition-colors ${
+                                        dragIndex === idx 
+                                            ? 'bg-blue-50/70 border-dashed border-2 border-blue-400' 
+                                            : 'hover:bg-slate-50/80'
+                                    }`}
+                                >
+                                    <td className="px-3 py-4 text-center">
+                                        <div className="flex items-center justify-center gap-1 cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700">
+                                            <GripVertical size={16} />
+                                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                                #{idx + 1}
+                                            </span>
+                                        </div>
+                                    </td>
                                     <td className="px-5 py-4">
                                         <div className="flex items-center gap-3">
                                             {c.image ? (

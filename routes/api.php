@@ -45,7 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/customers', [DashboardController::class, 'customers']);
-        Route::apiResource('/categories', CategoryController::class)->except(['index', 'show']);
+        Route::post('/categories/reorder', [CategoryController::class, 'reorder']);
+        Route::apiResource('/categories', CategoryController::class)->except(['index']);
         Route::apiResource('/products', ProductController::class)->except(['index', 'show']);
         Route::apiResource('/orders', OrderController::class)->except(['store']);
         Route::get('/orders/{order}/slip', [OrderController::class, 'downloadSlip']);

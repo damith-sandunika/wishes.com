@@ -95,33 +95,30 @@ export default function CategoryForm() {
                 </Link>
             }
         >
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-2xl mx-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 md:p-8 w-full">
                 {error && <div className="mb-5 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold">{error}</div>}
                 
                 {loading ? (
                     <div className="h-40 flex items-center justify-center text-slate-400 font-semibold text-xs">Loading category...</div>
                 ) : (
-                    <form onSubmit={save} className="space-y-4">
-                        <div>
-                            <label className={label}>Category Name *</label>
-                            <input required value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} className={inp} placeholder="e.g. Birthday Flowers" />
-                        </div>
-                        <div>
-                            <label className={label}>Description (Optional)</label>
-                            <textarea rows={3} value={form.description || ''} onChange={e => setForm({...form, description: e.target.value})} className={`${inp} resize-none`} placeholder="Brief description of gifts in this collection..." />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <form onSubmit={save} className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label className={label}>Sort Order</label>
-                                <input type="number" value={form.sort_order ?? 0} onChange={e => setForm({...form, sort_order: Number(e.target.value)})} className={inp} />
+                                <label className={label}>Category Name *</label>
+                                <input required value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} className={inp} placeholder="e.g. Birthday Flowers" />
                             </div>
                             <div>
                                 <label className={label}>Visibility Status</label>
                                 <select value={form.status ? 1 : 0} onChange={e => setForm({...form, status: Number(e.target.value) === 1})} className={inp}>
-                                    <option value={1}>Active</option>
-                                    <option value={0}>Inactive</option>
+                                    <option value={1}>Active / Visible in Store</option>
+                                    <option value={0}>Inactive / Hidden</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className={label}>Description (Optional)</label>
+                            <textarea rows={3} value={form.description || ''} onChange={e => setForm({...form, description: e.target.value})} className={`${inp} resize-none`} placeholder="Brief description of gifts in this collection..." />
                         </div>
 
                         <div>

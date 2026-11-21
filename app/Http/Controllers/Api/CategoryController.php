@@ -41,6 +41,9 @@ class CategoryController extends Controller
         }
 
         $validated['slug'] = Str::slug($validated['name']);
+        if (!isset($validated['sort_order'])) {
+            $validated['sort_order'] = ((int)Category::max('sort_order')) + 1;
+        }
         
         $category = Category::create($validated);
 
@@ -91,5 +94,20 @@ class CategoryController extends Controller
         $category->delete();
         Cache::forget('public_categories');
         return response()->json(['message' => 'Category deleted successfully']);
+    }
+
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:categories,id',
+        ]);
+
+        foreach ($validated['order'] as $index => $id) {
+            Category::where('id', $id)->update(['sort_order' => $index + 1]);
+        }
+
+        Cache::forget('public_categories');
+        return response()->json(['message' => 'Categories reordered successfully']);
     }
 }
