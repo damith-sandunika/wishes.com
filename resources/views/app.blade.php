@@ -5,9 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>Wishes.com - Gifts For Every Moment</title>
-        <link rel="icon" type="image/png" href="/logo.png">
-        <link rel="shortcut icon" href="/logo.png">
-        <link rel="apple-touch-icon" href="/logo.png">
+        <link rel="icon" type="image/png" href="/icons/icon-192.png">
+        <link rel="shortcut icon" href="/icons/icon-192.png">
+        <link rel="apple-touch-icon" href="/icons/icon-512.png">
 
         <!-- PWA Meta Tags -->
         <link rel="manifest" href="/manifest.json">
