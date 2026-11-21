@@ -112,11 +112,13 @@ class ImageOptimizerService
         imagedestroy($srcImage);
         imagedestroy($targetImage);
 
+        $disk = config('filesystems.image_disk', env('IMAGE_STORAGE_DISK', 'public'));
+
         if (!empty($webpContent)) {
-            Storage::disk('public')->put($targetPath, $webpContent);
+            Storage::disk($disk)->put($targetPath, $webpContent);
             return $targetPath;
         }
 
-        return $file->storeAs($folder, $filename, 'public');
+        return $file->storeAs($folder, $filename, $disk);
     }
 }
