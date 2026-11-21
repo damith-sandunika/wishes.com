@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\StockLogController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\SocialAuthController;
+use App\Http\Controllers\Api\PasswordResetController;
 
 // Public Health Check
 Route::get('/health', [DashboardController::class, 'health']);
@@ -23,6 +25,9 @@ Route::get('/health', [DashboardController::class, 'health']);
 // Authentication Endpoints
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/auth/google', [SocialAuthController::class, 'google'])->middleware('throttle:15,1');
+Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetCode'])->middleware('throttle:5,1');
+Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:5,1');
 
 // Read-only catalog endpoints
 Route::get('/products', [ProductController::class, 'index']);

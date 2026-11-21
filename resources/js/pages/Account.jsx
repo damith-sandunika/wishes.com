@@ -79,6 +79,14 @@ export default function Account() {
         }
     };
 
+    const handleGoogleSuccess = (data) => {
+        const u = data.user;
+        localStorage.setItem('user', JSON.stringify(u));
+        if (data.token) localStorage.setItem('auth_token', data.token);
+        setUser(u);
+        fetchOrders();
+    };
+
     const handleLogout = async () => {
         try { await axios.post('/api/logout'); } catch {}
         localStorage.removeItem('user');
@@ -161,6 +169,7 @@ export default function Account() {
                         loading={loading}
                         handleLogin={handleLogin}
                         handleRegister={handleRegister}
+                        onGoogleSuccess={handleGoogleSuccess}
                     />
                 )}
             </main>
